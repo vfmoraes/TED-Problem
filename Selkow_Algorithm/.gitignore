@@ -1,0 +1,150 @@
+# Arquivos Compilados
+*.o
+*.obj
+*.exe
+*.out
+*.app
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+
+# Executável principal
+programa
+programa.exe
+
+# Arquivos de Debug
+*.pdb
+*.idb
+*.ilk
+
+# Arquivos temporários do compilador
+*.tmp
+*.temp
+*.gch
+*.pch
+
+# Arquivos de IDE/Editor
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Visual Studio
+.vs/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# CodeBlocks
+*.cbp
+*.layout
+*.depend
+
+# Dev-C++
+*.dev
+
+# CLion
+.idea/
+cmake-build-*/
+
+# Eclipse CDT
+.cproject
+.project
+.settings/
+
+# Arquivos do Sistema
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Linux
+*~
+.nfs*
+
+# Arquivos de Log e Saída
+*.log
+*.txt
+*.csv
+*.dat
+output/
+logs/
+
+# Arquivos de Backup
+*.bak
+*.backup
+*.swp
+*.swo
+*~
+
+# Arquivos de Cache
+*.cache
+cache/
+
+# Arquivos de Testes (se houver)
+test_output/
+test_results/
+
+# Arquivos de Documentação Gerados
+doc/
+docs/html/
+docs/latex/
+
+# Core dumps
+core.*
+vgcore.*
+
+# Valgrind
+*.valgrind
+
+# Arquivos de Profiling
+gmon.out
+*.gcov
+*.gcda
+*.gcno
+
+# CMake (caso seja usado futuramente)
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+
+# Conan (gerenciador de pacotes C++)
+conanfile.txt
+conandata.yml
+conanbuildinfo.*
+conan.lock
