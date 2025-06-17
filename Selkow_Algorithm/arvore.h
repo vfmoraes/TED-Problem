@@ -44,6 +44,7 @@ private:
     unique_ptr<No> noRaiz;
 
     // Funções Auxiliares Recursivas
+     const No* encontrarNoPorRotuloRecursivamente(const No* noAtual, const string& rotulo) const;
     void obterNosEmPosOrdemRecursivamente(const No* noAtual, vector<const No*>& listaDeNos) const;
     void obterProfundidadesRecursivamente(const No* noAtual, int profundidadeAtual, unordered_map<const No*, int>& mapaDeProfundidades) const;
     int obterTamanhosDasSubarvoresRecursivamente(const No* noAtual, unordered_map<const No*, int>& mapaDeTamanhos) const;
@@ -98,6 +99,27 @@ public:
      * @return true se é folha, false caso contrário
      */
     bool ehFolha(const No* no) const;
+
+    /**
+     * @brief Obtém um nó específico pelo seu índice na ordenação pós-ordem
+     * @param indice Índice do nó na lista pós-ordem (0-based)
+     * @return Ponteiro para o nó ou nullptr se índice inválido
+     */
+    const No* obterNoPorIndicePosOrdem(int indice) const;
+
+    /**
+     * @brief Encontra um nó pelo seu rótulo na árvore
+     * @param rotulo Rótulo do nó a ser encontrado
+     * @return Ponteiro para o primeiro nó encontrado com esse rótulo ou nullptr se não encontrado
+     */
+    const No* encontrarNoPorRotulo(const string& rotulo) const;
+
+    /**
+     * @brief Obtém o índice de um nó na ordenação pós-ordem
+     * @param no Ponteiro para o nó
+     * @return Índice do nó na lista pós-ordem (-1 se não encontrado)
+     */
+    int obterIndicePosOrdem(const No* no) const;
 };
 
 // Funções utilitárias

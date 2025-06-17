@@ -17,6 +17,7 @@ public:
     double custoInsercaoUnico(const No* no) const;
     double custoDelecaoUnico(const No* no) const;
     double custoRotulacao(const std::string& rotuloOrigem, const std::string& rotuloDestino) const;
+    double calcularDistanciaLevenshtein(const std::string& s1, const std::string& s2) const;
 
     double custoInsercaoSubarvore(const No* no) const;
     double custoDelecaoSubarvore(const No* no) const;

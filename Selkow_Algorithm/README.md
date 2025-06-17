@@ -45,10 +45,12 @@ Este comando irá:
 Se preferir compilar manualmente:
 
 ```bash
+# Compilação Manual
 g++ -std=c++17 -Wall -Wextra -g -c main.cpp -o main.o
 g++ -std=c++17 -Wall -Wextra -g -c arvore.cpp -o arvore.o
 g++ -std=c++17 -Wall -Wextra -g -c custo.cpp -o custo.o
-g++ -std=c++17 -Wall -Wextra -g -o programa main.o arvore.o custo.o
+g++ -std=c++17 -Wall -Wextra -g -c ted.cpp -o ted.o
+g++ -std=c++17 -Wall -Wextra -g -o programa main.o arvore.o custo.o ted.o
 ```
 
 ## Como Executar
