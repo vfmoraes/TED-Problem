@@ -124,17 +124,18 @@ unique_ptr<No> criarNo(const string& rotulo) {
     return make_unique<No>(rotulo);
 }
 
-unique_ptr<No> criarArvoreAleatoria(int numNos) {
+unique_ptr<No> criarArvoreAleatoria(int numNos, int seed) {
     int numeroNo = 0;
     if (numNos <= 0) {
         return nullptr;
     }
     
-    srand(time(nullptr)); // Seed para números aleatórios
+    //srand(time(nullptr)); // Seed para números aleatórios
+    srand(seed);
     vector<No*> nosDisponiveis; // Pool de nós que podem receber filhos
     
     // Criar nó raiz
-    auto raiz = criarNo(to_string(numeroNo)); // Números de 0 a 99
+    auto raiz = criarNo(to_string(numeroNo)); 
     numeroNo++;
     nosDisponiveis.push_back(raiz.get());
     

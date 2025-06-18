@@ -17,10 +17,10 @@ TED::TED(const Arvore& a1, const Arvore& a2, const CalculadorDeCustos& calculado
     nosA2.clear();
     
     // Rearranjar em ordem DECRESCENTE: último elemento primeiro (raiz primeiro)
-    for (int i = temp1.size() - 1; i >= 0; i--) {
+    for (int i = (int) temp1.size() - 1; i >= 0; i--) {
         nosA1.push_back(temp1[i]);
     }
-    for (int i = temp2.size() - 1; i >= 0; i--) {
+    for (int i = (int) temp2.size() - 1; i >= 0; i--) {
         nosA2.push_back(temp2[i]);
     }
     
@@ -39,12 +39,16 @@ TED::TED(const Arvore& a1, const Arvore& a2, const CalculadorDeCustos& calculado
     
     // Primeira linha: árvore vazia → prefixos de A2 (só inserções)
     for (int j = 1; j <= n; j++) {
-        matrizCusto[0][j] = matrizCusto[0][j-1] + calculador.custoInsercaoUnico(nosA2[j-1]);
+        matrizCusto[0][j] = matrizCusto[0][j-1] + calculador.custoInsercaoUnico(nosA2[j-1]); 
+        //Alternativa
+        //calculador.custoInsercaoSubarvore(nosA2[j-1]);
     }
     
     // Primeira coluna: prefixos de A1 → árvore vazia (só deleções)
     for (int i = 1; i <= m; i++) {
         matrizCusto[i][0] = matrizCusto[i-1][0] + calculador.custoDelecaoUnico(nosA1[i-1]);
+        //Alternativa
+        //calculador.custoDelecaoSubarvore(nosA1[i-1]);
     }
     
     // PREENCHIMENTO DA MATRIZ (esquerda→direita, cima→baixo):

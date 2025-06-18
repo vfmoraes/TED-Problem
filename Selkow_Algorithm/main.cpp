@@ -256,32 +256,18 @@ void testarTEDArvoreCompleta() {
     cout << "=== TESTE TED 4: Árvores Complexas ===" << endl;
     
     // Árvore A1: A -> {B -> D, C}
-    auto raiz1 = criarNo("A");
-    auto filhoB = criarNo("B");
-    filhoB->adicionarFilho(criarNo("D"));
-    raiz1->adicionarFilho(move(filhoB));
-    raiz1->adicionarFilho(criarNo("C"));
-    Arvore a1(move(raiz1));
-    
-    // Árvore A2: A -> {B -> E, F}
-    auto raiz2 = criarNo("A");
-    auto filhoB2 = criarNo("B");
-    filhoB2->adicionarFilho(criarNo("E"));
-    raiz2->adicionarFilho(move(filhoB2));
-    raiz2->adicionarFilho(criarNo("F"));
-    Arvore a2(move(raiz2));
-    
-    cout << "Árvore A1:" << endl;
-    cout << a1 << endl;
-    
-    cout << "Árvore A2:" << endl;
-    cout << a2 << endl;
-    
+    Arvore a1(criarArvoreAleatoria(10, 20));
+    Arvore a2(criarArvoreAleatoria(10, 42));
     CalculadorDeCustos calculador(1.0, 1.0, 1.0);
     TED ted(a1, a2, calculador);
     
+    cout << "Árvore A1:" << endl;
+    imprimirArvoreRecursivamente(cout, a1.obterNoRaiz(), "", false);
+    cout << endl << "Árvore A2:" << endl;
+    imprimirArvoreRecursivamente(cout, a2.obterNoRaiz(), "", false);
+    cout << endl;
+
     ted.imprimirMatrizCusto();
-    cout << "Operações necessárias: D->E, C->F" << endl;
     cout << "Custo TED calculado: " << ted.obterCusto() << endl;
     cout << endl;
 }
@@ -323,6 +309,92 @@ void testarTEDCustosPersonalizados() {
 }
 
 int main() {
+
+    cout << "=== Demonstracao da Estrutura de Arvore ===" << endl;
+    cout << endl;
+    
+    // Criando os nós folha
+    auto noE = criarNo("E");
+    auto noF = criarNo("F");
+    auto noG = criarNo("G");
+    auto noH = criarNo("H");
+    
+    // Criando os nós intermediários
+    auto noB = criarNo("B");
+    noB->adicionarFilho(move(noE));
+    noB->adicionarFilho(move(noF));
+    
+    auto noC = criarNo("C");
+    
+    auto noD = criarNo("D");
+    noD->adicionarFilho(move(noG));
+    noD->adicionarFilho(move(noH));
+    
+    // Criando a raiz e montando a árvore
+    auto noA = criarNo("A");
+    noA->adicionarFilho(move(noB));
+    noA->adicionarFilho(move(noC));
+    noA->adicionarFilho(move(noD));
+    
+    // Criando o objeto árvore
+    Arvore arvore(move(noA));
+    
+    // Imprimindo a árvore
+    cout << "Estrutura da arvore:" << endl;
+    cout << arvore << endl;
+    
+    // Demonstrando funcionalidades
+    cout << "=== Analise da Arvore ===" << endl;
+    
+    // Obtendo nós em pós-ordem
+    vector<const No*> nosEmPosOrdem = arvore.obterNosEmPosOrdem();
+    cout << "Nos em pos-ordem: ";
+    for (size_t i = 0; i < nosEmPosOrdem.size(); ++i) {
+        cout << nosEmPosOrdem[i]->rotulo;
+        if (i < nosEmPosOrdem.size() - 1) cout << " -> ";
+    }
+    cout << endl;
+    
+    // Obtendo profundidades
+    auto profundidades = arvore.obterProfundidades();
+    cout << "Profundidades dos nos:" << endl;
+    for (const No* no : nosEmPosOrdem) {
+        cout << "  " << no->rotulo << ": profundidade " << profundidades[no] << endl;
+    }
+    
+    // Obtendo tamanhos das subárvores
+    auto tamanhos = arvore.obterTamanhosDasSubarvores();
+    cout << "Tamanhos das subarvores:" << endl;
+    for (const No* no : nosEmPosOrdem) {
+        cout << "  Subarvore de " << no->rotulo << ": " << tamanhos[no] << " nos" << endl;
+    }
+    
+    cout << endl;
+    cout << "=== Fim da Demonstracao ===" << endl;
+    
+    // Demonstração da árvore aleatória
+    cout << endl;
+    cout << "=== Arvore Aleatoria ===" << endl;
+    
+    auto arvoreAleatoria = criarArvoreAleatoria(6, 42);
+    
+    if (arvoreAleatoria) {
+        Arvore arvoreRandom(move(arvoreAleatoria));
+        cout << "Estrutura da arvore aleatoria:" << endl;
+        cout << arvoreRandom << endl;
+        
+        // Demonstrar funções úteis para Selkow
+        cout << "=== Funcoes Uteis para Selkow ===" << endl;
+        cout << "Total de nos: " << arvoreRandom.contarNos() << endl;
+        
+        // Testar profundidade de um nó específico
+        const No* raiz = arvoreRandom.obterNoRaiz();
+        if (raiz) {
+            cout << "Raiz eh folha? " << (arvoreRandom.ehFolha(raiz) ? "Sim" : "Nao") << endl;
+        }
+    }
+
+
     cout << "========================================" << endl;
     cout << "    TESTE DO SISTEMA DE CUSTOS" << endl;
     cout << "      Algoritmo de Selkow" << endl;
