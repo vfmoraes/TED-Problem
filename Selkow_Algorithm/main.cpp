@@ -1,516 +1,490 @@
 #include "ted.h"
+#include <chrono>
+#include <iomanip>
+#include <fstream>
+#include <cmath>
 
-// ========== FUNÇÕES DE TESTE ==========
+using namespace std::chrono;
 
-// Teste 1: Custos básicos
-void testarCustosBasicos() {
-    cout << "=== TESTE 1: Custos Básicos ===" << endl;
-    
-    CalculadorDeCustos calculador(1.0, 1.0, 1.0);
-    
-    // Criar nó simples
-    auto no = criarNo("A");
-    
-    cout << "Nó 'A':" << endl;
-    cout << "  Custo inserção único: " << calculador.custoInsercaoUnico(no.get()) << endl;
-    cout << "  Custo deleção único: " << calculador.custoDelecaoUnico(no.get()) << endl;
-    cout << "  Custo inserção subárvore: " << calculador.custoInsercaoSubarvore(no.get()) << endl;
-    cout << "  Custo deleção subárvore: " << calculador.custoDelecaoSubarvore(no.get()) << endl;
-    
-    cout << "\nTestes de rotulação:" << endl;
-    cout << "  A -> A: " << calculador.custoRotulacao("A", "A") << " (deve ser 0)" << endl;
-    cout << "  A -> B: " << calculador.custoRotulacao("A", "B") << endl;
-    cout << "  ABC -> XYZ: " << calculador.custoRotulacao("ABC", "XYZ") << endl;
-    cout << "  Test -> Testing: " << calculador.custoRotulacao("Test", "Testing") << endl;
-    cout << endl;
+// ========== ESTRUTURA PARA RESULTADOS DE PERFORMANCE ==========
+
+struct ResultadoPerformance {
+    int tamanhoArvore1;
+    int tamanhoArvore2;
+    double tempoExecucaoMs;
+    double custoTED;
+    size_t tamanhoCache;
+    double memoriaUtilizada; // Em KB aproximadamente
+};
+
+// ========== FUNÇÕES DE ANÁLISE DE PERFORMANCE ==========
+
+/**
+ * @brief Calcula o uso aproximado de memória do cache do algoritmo TED
+ */
+double calcularUsoMemoria(const TED& ted) {
+    size_t tamanhoCache = ted.obterTamanhoCache();
+    // Estimativa: cada entrada do cache tem 2 ponteiros (16 bytes) + double (8 bytes) = 24 bytes
+    return (tamanhoCache * 24.0) / 1024.0; // Converter para KB
 }
 
-// Teste 2: Árvore com subárvores
-void testarArvoreComSubarvores() {
-    cout << "=== TESTE 2: Árvore com Subárvores ===" << endl;
+/**
+ * @brief Executa um teste de performance para um par de árvores
+ */
+ResultadoPerformance executarTestePerformance(int tamanho1, int tamanho2, int seed1, int seed2) {
+    // Criar árvores aleatórias
+    Arvore arvore1(criarArvoreAleatoria(tamanho1, seed1));
+    Arvore arvore2(criarArvoreAleatoria(tamanho2, seed2));
     
-    // Criar árvore: A -> B(D, E), C
-    auto noD = criarNo("D");
-    auto noE = criarNo("E");
+    // Configurar calculador de custos
+    CalculadorDeCustos calculador(1.0, 1.0, 1.0);
     
-    auto noB = criarNo("B");
-    noB->adicionarFilho(move(noD));
-    noB->adicionarFilho(move(noE));
+    // Medir tempo de execução
+    auto inicio = high_resolution_clock::now();
     
-    auto noC = criarNo("C");
+    TED ted(arvore1, arvore2, calculador);
+    double custo = ted.obterCusto();
     
-    auto noA = criarNo("A");
-    noA->adicionarFilho(move(noB));
-    noA->adicionarFilho(move(noC));
+    auto fim = high_resolution_clock::now();
+    auto duracao = duration_cast<microseconds>(fim - inicio);
     
-    Arvore arvore(move(noA));
+    // Calcular uso de memória
+    double memoria = calcularUsoMemoria(ted);
     
-    cout << "Árvore de teste:" << endl;
-    cout << arvore << endl;
+    ResultadoPerformance resultado;
+    resultado.tamanhoArvore1 = tamanho1;
+    resultado.tamanhoArvore2 = tamanho2;
+    resultado.tempoExecucaoMs = duracao.count() / 1000.0; // Converter para millisegundos
+    resultado.custoTED = custo;
+    resultado.tamanhoCache = ted.obterTamanhoCache();
+    resultado.memoriaUtilizada = memoria;
     
-    CalculadorDeCustos calculador;
+    return resultado;
+}
+
+/**
+ * @brief Salva os resultados em um arquivo CSV para análise posterior
+ */
+void salvarResultadosCSV(const vector<ResultadoPerformance>& resultados, const string& nomeArquivo) {
+    ofstream arquivo(nomeArquivo);
     
-    // Testar custos para cada nó
-    vector<const No*> nos = arvore.obterNosEmPosOrdem();
+    if (!arquivo.is_open()) {
+        cout << "Erro: Não foi possível criar o arquivo " << nomeArquivo << endl;
+        return;
+    }
     
-    cout << "Análise de custos por nó:" << endl;
-    for (const No* no : nos) {
-        cout << "Nó '" << no->rotulo << "':" << endl;
-        cout << "  Inserção única: " << calculador.custoInsercaoUnico(no) << endl;
-        cout << "  Deleção única: " << calculador.custoDelecaoUnico(no) << endl;
-        cout << "  Inserção subárvore: " << calculador.custoInsercaoSubarvore(no) << endl;
-        cout << "  Deleção subárvore: " << calculador.custoDelecaoSubarvore(no) << endl;
-        cout << "  É folha: " << (arvore.ehFolha(no) ? "Sim" : "Não") << endl;
+    // Cabeçalho CSV
+    arquivo << "Tamanho1,Tamanho2,TempoMs,CustoTED,TamanhoCache,MemoriaKB" << endl;
+    
+    // Dados
+    for (const auto& resultado : resultados) {
+        arquivo << resultado.tamanhoArvore1 << ","
+                << resultado.tamanhoArvore2 << ","
+                << fixed << setprecision(4) << resultado.tempoExecucaoMs << ","
+                << resultado.custoTED << ","
+                << resultado.tamanhoCache << ","
+                << resultado.memoriaUtilizada << endl;
+    }
+    
+    arquivo.close();
+    cout << "Resultados salvos em: " << nomeArquivo << endl;
+}
+
+/**
+ * @brief Analisa os resultados coletados e imprime estatísticas
+ */
+void analisarResultados(const vector<ResultadoPerformance>& resultados) {
+    cout << "=== ANÁLISE ESTATÍSTICA DOS RESULTADOS ===" << endl;
+    cout << endl;
+    
+    if (resultados.empty()) {
+        cout << "Nenhum resultado para analisar." << endl;
+        return;
+    }
+    
+    // Calcular estatísticas
+    double tempoMin = resultados[0].tempoExecucaoMs;
+    double tempoMax = resultados[0].tempoExecucaoMs;
+    double tempoTotal = 0.0;
+    double memoriaTotal = 0.0;
+    
+    for (const auto& resultado : resultados) {
+        tempoMin = min(tempoMin, resultado.tempoExecucaoMs);
+        tempoMax = max(tempoMax, resultado.tempoExecucaoMs);
+        tempoTotal += resultado.tempoExecucaoMs;
+        memoriaTotal += resultado.memoriaUtilizada;
+    }
+    
+    double tempoMedio = tempoTotal / resultados.size();
+    double memoriMedia = memoriaTotal / resultados.size();
+    
+    cout << "Estatísticas de Tempo de Execução:" << endl;
+    cout << "  Tempo mínimo: " << fixed << setprecision(2) << tempoMin << " ms" << endl;
+    cout << "  Tempo máximo: " << tempoMax << " ms" << endl;
+    cout << "  Tempo médio:  " << tempoMedio << " ms" << endl;
+    cout << "  Fator de crescimento: " << (tempoMax / tempoMin) << "x" << endl;
+    cout << endl;
+    
+    cout << "Estatísticas de Uso de Memória:" << endl;
+    cout << "  Memória média: " << memoriMedia << " KB" << endl;
+    cout << "  Memória total testada: " << memoriaTotal << " KB" << endl;
+    cout << endl;
+      // Análise de complexidade baseada no produto dos tamanhos (n1 × n2)
+    if (resultados.size() >= 3) {
+        cout << "Análise de Complexidade usando Regressão Linear:" << endl;
+        cout << "Modelo assumido: T(n1,n2) = c × (n1 × n2)^k" << endl;
         cout << endl;
-    }
-}
-
-// Teste 3: Validação das propriedades do algoritmo de Selkow
-void testarPropriedadesSankoff() {
-    cout << "=== TESTE 3: Propriedades do Algoritmo de Selkow ===" << endl;
-    
-    CalculadorDeCustos calculador;
-    
-    // Teste da propriedade: CL(si, si) = 0
-    cout << "Propriedade CL(si, si) = 0:" << endl;
-    cout << "  A -> A: " << calculador.custoRotulacao("A", "A") << endl;
-    cout << "  Test -> Test: " << calculador.custoRotulacao("Test", "Test") << endl;
-    
-    // Teste da desigualdade triangular (aproximada)
-    cout << "\nTeste de consistência (desigualdade triangular):" << endl;
-    string s1 = "A", s2 = "B", s3 = "C";
-    double c12 = calculador.custoRotulacao(s1, s2);
-    double c23 = calculador.custoRotulacao(s2, s3);
-    double c13 = calculador.custoRotulacao(s1, s3);
-    
-    cout << "  " << s1 << " -> " << s2 << ": " << c12 << endl;
-    cout << "  " << s2 << " -> " << s3 << ": " << c23 << endl;
-    cout << "  " << s1 << " -> " << s3 << ": " << c13 << endl;
-    cout << "  Desigualdade triangular: " << c13 << " <= " << (c12 + c23) 
-         << " ? " << (c13 <= c12 + c23 ? "OK" : "FALHOU") << endl;
-    cout << endl;
-}
-
-// Teste 4: Performance e cache
-void testarPerformanceCache() {
-    cout << "=== TESTE 4: Performance e Cache ===" << endl;
-    
-    // Criar árvore maior
-    srand(42); // Seed fixo para reproduzibilidade
-    
-    auto raiz = criarNo("0");
-    vector<No*> nosDisponiveis;
-    nosDisponiveis.push_back(raiz.get());
-    
-    // Criar árvore com 10 nós
-    for (int i = 1; i < 10; ++i) {
-        auto novoNo = criarNo(to_string(i));
-        No* pai = nosDisponiveis[rand() % nosDisponiveis.size()];
-        pai->adicionarFilho(move(novoNo));
-        nosDisponiveis.push_back(pai->filhos.back().get());
-    }
-    
-    Arvore arvore(move(raiz));
-    
-    cout << "Árvore de teste (10 nós):" << endl;
-    cout << arvore << endl;
-    
-    CalculadorDeCustos calculador;
-    
-    // Primeiro cálculo (sem cache)
-    clock_t inicio = clock();
-    double custoInsercao = calculador.custoInsercaoSubarvore(arvore.obterNoRaiz());
-    clock_t fim = clock();
-    
-    cout << "Primeiro cálculo (sem cache):" << endl;
-    cout << "  Custo inserção total: " << custoInsercao << endl;
-    cout << "  Tempo: " << (double)(fim - inicio) / CLOCKS_PER_SEC << "s" << endl;
-    
-    // Segundo cálculo (com cache)
-    inicio = clock();
-    double custoInsercao2 = calculador.custoInsercaoSubarvore(arvore.obterNoRaiz());
-    fim = clock();
-    
-    cout << "Segundo cálculo (com cache):" << endl;
-    cout << "  Custo inserção total: " << custoInsercao2 << endl;
-    cout << "  Tempo: " << (double)(fim - inicio) / CLOCKS_PER_SEC << "s" << endl;
-    cout << "  Resultados iguais: " << (custoInsercao == custoInsercao2 ? "OK" : "ERRO") << endl;
-    cout << endl;
-}
-
-// Teste 5: Casos extremos
-void testarCasosExtremos() {
-    cout << "=== TESTE 5: Casos Extremos ===" << endl;
-    
-    CalculadorDeCustos calculador;
-    
-    // Teste com nó nulo
-    cout << "Teste com nó nulo:" << endl;
-    cout << "  custoInsercaoUnico(nullptr): " << calculador.custoInsercaoUnico(nullptr) << endl;
-    cout << "  custoDelecaoUnico(nullptr): " << calculador.custoDelecaoUnico(nullptr) << endl;
-    cout << "  custoInsercaoSubarvore(nullptr): " << calculador.custoInsercaoSubarvore(nullptr) << endl;
-    cout << "  custoDelecaoSubarvore(nullptr): " << calculador.custoDelecaoSubarvore(nullptr) << endl;
-    
-    // Teste com strings vazias
-    cout << "\nTeste com strings vazias:" << endl;
-    cout << "  '' -> '': " << calculador.custoRotulacao("", "") << endl;
-    cout << "  '' -> 'A': " << calculador.custoRotulacao("", "A") << endl;
-    cout << "  'A' -> '': " << calculador.custoRotulacao("A", "") << endl;
-    
-    // Teste com strings muito longas
-    cout << "\nTeste com strings longas:" << endl;
-    string longa1(100, 'A');
-    string longa2(100, 'B');
-    cout << "  String longa A -> String longa B: " << calculador.custoRotulacao(longa1, longa2) << endl;
-    
-    cout << endl;
-}
-
-// ========== TESTES DO ALGORITMO DE SELKOW (TED) ==========
-
-void testarTEDBasico() {
-    cout << "=== TESTE TED 1: Caso Básico ===" << endl;
-    
-    // Árvore A1: A -> C
-    auto raiz1 = criarNo("A");
-    raiz1->adicionarFilho(criarNo("C"));
-    Arvore a1(move(raiz1));
-    
-    // Árvore A2: A -> D
-    auto raiz2 = criarNo("A");
-    raiz2->adicionarFilho(criarNo("D"));
-    Arvore a2(move(raiz2));
-    
-    cout << "Árvore A1:" << endl;
-    cout << a1 << endl;
-    
-    cout << "Árvore A2:" << endl;
-    cout << a2 << endl;
-      CalculadorDeCustos calculador(1.0, 1.0, 1.0);
-    TED ted(a1, a2, calculador);    cout << "=== Análise Detalhada do Cálculo ===" << endl;
-    ted.imprimirDetalhesCalculo();
-    ted.imprimirMatrizesCustos();
-    cout << "Custo TED esperado: 1 (C->D)" << endl;
-    cout << "Custo TED calculado: " << ted.obterCusto() << endl;
-    cout << endl;
-}
-
-void testarTEDArvoreIdentica() {
-    cout << "=== TESTE TED 2: Árvores Idênticas ===" << endl;
-    
-    // Ambas árvores: A -> B -> C
-    auto raiz1 = criarNo("A");
-    auto filho1 = criarNo("B");
-    filho1->adicionarFilho(criarNo("C"));
-    raiz1->adicionarFilho(move(filho1));
-    Arvore a1(move(raiz1));
-    
-    auto raiz2 = criarNo("A");
-    auto filho2 = criarNo("B");
-    filho2->adicionarFilho(criarNo("C"));
-    raiz2->adicionarFilho(move(filho2));
-    Arvore a2(move(raiz2));
-    
-    cout << "Ambas árvores são idênticas:" << endl;
-    cout << a1 << endl;
-      CalculadorDeCustos calculador(1.0, 1.0, 1.0);
-    TED ted(a1, a2, calculador);    cout << "=== Análise Detalhada do Cálculo ===" << endl;
-    ted.imprimirDetalhesCalculo();
-    ted.imprimirMatrizesCustos();
-    cout << "Custo TED esperado: 0 (árvores idênticas)" << endl;
-    cout << "Custo TED calculado: " << ted.obterCusto() << endl;
-    cout << endl;
-}
-
-void testarTEDArvoreVazia() {
-    cout << "=== TESTE TED 3: Uma Árvore Vazia ===" << endl;
-    
-    // Árvore A1: apenas A
-    auto raiz1 = criarNo("A");
-    Arvore a1(move(raiz1));
-    
-    // Árvore A2: A -> B -> C
-    auto raiz2 = criarNo("A");
-    auto filho2 = criarNo("B");
-    filho2->adicionarFilho(criarNo("C"));
-    raiz2->adicionarFilho(move(filho2));
-    Arvore a2(move(raiz2));
-    
-    cout << "Árvore A1 (simples):" << endl;
-    cout << a1 << endl;
-    
-    cout << "Árvore A2 (complexa):" << endl;
-    cout << a2 << endl;
-      CalculadorDeCustos calculador(1.0, 1.0, 1.0);
-    TED ted(a1, a2, calculador);    cout << "=== Análise Detalhada do Cálculo ===" << endl;
-    ted.imprimirDetalhesCalculo();
-    ted.imprimirMatrizesCustos();
-    cout << "Custo TED (inserir B e C): " << ted.obterCusto() << endl;
-    cout << endl;
-}
-
-void testarTEDArvoreCompleta() {
-    cout << "=== TESTE TED 4: Árvores Complexas ===" << endl;
-    
-    // Árvore A1: A -> {B -> D, C}
-    Arvore a1(criarArvoreAleatoria(10, 20));
-    Arvore a2(criarArvoreAleatoria(10, 42));
-    CalculadorDeCustos calculador(1.0, 1.0, 1.0);
-    TED ted(a1, a2, calculador);
-    
-    cout << "Árvore A1:" << endl;
-    imprimirArvoreRecursivamente(cout, a1.obterNoRaiz(), "", false);
-    cout << endl << "Árvore A2:" << endl;    imprimirArvoreRecursivamente(cout, a2.obterNoRaiz(), "", false);
-    cout << endl;    cout << "=== Análise Detalhada do Cálculo ===" << endl;
-    ted.imprimirDetalhesCalculo();
-    ted.imprimirMatrizesCustos();
-    cout << "Custo TED calculado: " << ted.obterCusto() << endl;
-    cout << endl;
-}
-
-void testarTEDCustosPersonalizados() {
-    cout << "=== TESTE TED 5: Custos Personalizados ===" << endl;
-    
-    // Árvore A1: A -> B
-    auto raiz1 = criarNo("A");
-    raiz1->adicionarFilho(criarNo("B"));
-    Arvore a1(move(raiz1));
-    
-    // Árvore A2: A -> C
-    auto raiz2 = criarNo("A");
-    raiz2->adicionarFilho(criarNo("C"));
-    Arvore a2(move(raiz2));
-    
-    cout << "Árvore A1:" << endl;
-    cout << a1 << endl;
-    
-    cout << "Árvore A2:" << endl;
-    cout << a2 << endl;
-      // Teste com custos diferentes
-    CalculadorDeCustos calculador1(2.0, 3.0, 1.5); // inserção, deleção, rotulação
-    TED ted1(a1, a2, calculador1);    cout << "Com custos personalizados (ins:2.0, del:3.0, rot:1.5):" << endl;
-    cout << "=== Análise Detalhada do Cálculo ===" << endl;
-    ted1.imprimirDetalhesCalculo();
-    ted1.imprimirMatrizesCustos();
-    cout << "Custo TED: " << ted1.obterCusto() << endl;
-    
-    CalculadorDeCustos calculador2(1.0, 1.0, 1.0); // custos padrão
-    TED ted2(a1, a2, calculador2);
-      cout << "\nCom custos padrão (ins:1.0, del:1.0, rot:1.0):" << endl;
-    cout << "=== Análise Detalhada do Cálculo ===" << endl;
-    ted2.imprimirDetalhesCalculo();
-    ted2.imprimirMatrizesCustos();
-    cout << "Custo TED: " << ted2.obterCusto() << endl;
-    cout << endl;
-}
-
-void testarTEDMatrizesCompletas() {
-    cout << "=== TESTE TED ESPECIAL: Demonstração Completa de Matrizes ===" << endl;
-    
-    // Árvore A1: A -> {B -> D, C}
-    auto noD1 = criarNo("D");
-    auto noB1 = criarNo("B");
-    noB1->adicionarFilho(move(noD1));
-    auto noC1 = criarNo("C");
-    auto raiz1 = criarNo("A");
-    raiz1->adicionarFilho(move(noB1));
-    raiz1->adicionarFilho(move(noC1));
-    Arvore a1(move(raiz1));
-    
-    // Árvore A2: A -> {E, F -> G}
-    auto noE2 = criarNo("E");
-    auto noG2 = criarNo("G");
-    auto noF2 = criarNo("F");
-    noF2->adicionarFilho(move(noG2));
-    auto raiz2 = criarNo("A");
-    raiz2->adicionarFilho(move(noE2));
-    raiz2->adicionarFilho(move(noF2));
-    Arvore a2(move(raiz2));
-    
-    cout << "🌳 ÁRVORE A1:" << endl;
-    cout << a1 << endl;
-    
-    cout << "🌳 ÁRVORE A2:" << endl;
-    cout << a2 << endl;
-    
-    CalculadorDeCustos calculador(1.0, 1.0, 1.0);
-    TED ted(a1, a2, calculador);
-    
-    cout << "🎯 RESULTADO FINAL:" << endl;    cout << "Custo TED calculado: " << ted.obterCusto() << endl;
-    
-    cout << "\n📊 ANÁLISE DETALHADA:" << endl;
-    ted.imprimirDetalhesCalculo();
-    
-    cout << "\n📋 MATRIZES DE CUSTOS:" << endl;
-    ted.imprimirMatrizesCustos();
-    
-    cout << "\n🏆 DEMONSTRAÇÃO CONCLUÍDA COM SUCESSO!" << endl;
-    cout << "================================================" << endl;
-}
-
-void testarExemploEspecifico() {
-    cout << "=== TESTE EXEMPLO ESPECÍFICO (Análise Correta) ===" << endl;
-    
-    // Árvore A: R -> P -> {C, D}
-    auto noC1 = criarNo("C");
-    auto noD1 = criarNo("D");
-    auto noP = criarNo("P");
-    noP->adicionarFilho(move(noC1));
-    noP->adicionarFilho(move(noD1));
-    auto raizA = criarNo("R");
-    raizA->adicionarFilho(move(noP));
-    Arvore arvoreA(move(raizA));
-    
-    // Árvore B: R -> Q -> {C, E}
-    auto noC2 = criarNo("C");
-    auto noE2 = criarNo("E");
-    auto noQ = criarNo("Q");
-    noQ->adicionarFilho(move(noC2));
-    noQ->adicionarFilho(move(noE2));
-    auto raizB = criarNo("R");
-    raizB->adicionarFilho(move(noQ));
-    Arvore arvoreB(move(raizB));
-    
-    cout << "Árvore A: R -> P -> {C, D}" << endl;
-    cout << arvoreA << endl;
-    
-    cout << "Árvore B: R -> Q -> {C, E}" << endl;
-    cout << arvoreB << endl;
-    
-    CalculadorDeCustos calculador(1.0, 1.0, 1.0);
-    TED ted(arvoreA, arvoreB, calculador);
-    
-    cout << "=== ANÁLISE DO EXEMPLO ===" << endl;
-    cout << "Esperado: Matriz principal 2x2 para florestas {P} vs {Q}" << endl;
-    cout << "Esperado: Matriz secundária 3x3 para florestas {C,D} vs {C,E}" << endl;
-    cout << "Custo esperado P->Q: 1 (renomeação) + custo edição florestas" << endl;
-    cout << "Custo edição {C,D}->{C,E}: deve considerar C->C=0, D->E=1" << endl;
-    cout << endl;
-    
-    ted.imprimirDetalhesCalculo();
-    ted.imprimirMatrizesCustos();
-    
-    cout << "Custo TED final calculado: " << ted.obterCusto() << endl;
-    cout << "Tamanho do cache: " << ted.obterTamanhoCache() << " entradas" << endl;
-    cout << endl;
-}
-
-int main() {
-
-    cout << "=== Demonstracao da Estrutura de Arvore ===" << endl;
-    cout << endl;
-    
-    // Criando os nós folha
-    auto noE = criarNo("E");
-    auto noF = criarNo("F");
-    auto noG = criarNo("G");
-    auto noH = criarNo("H");
-    
-    // Criando os nós intermediários
-    auto noB = criarNo("B");
-    noB->adicionarFilho(move(noE));
-    noB->adicionarFilho(move(noF));
-    
-    auto noC = criarNo("C");
-    
-    auto noD = criarNo("D");
-    noD->adicionarFilho(move(noG));
-    noD->adicionarFilho(move(noH));
-    
-    // Criando a raiz e montando a árvore
-    auto noA = criarNo("A");
-    noA->adicionarFilho(move(noB));
-    noA->adicionarFilho(move(noC));
-    noA->adicionarFilho(move(noD));
-    
-    // Criando o objeto árvore
-    Arvore arvore(move(noA));
-    
-    // Imprimindo a árvore
-    cout << "Estrutura da arvore:" << endl;
-    cout << arvore << endl;
-    
-    // Demonstrando funcionalidades
-    cout << "=== Analise da Arvore ===" << endl;
-    
-    // Obtendo nós em pós-ordem
-    vector<const No*> nosEmPosOrdem = arvore.obterNosEmPosOrdem();
-    cout << "Nos em pos-ordem: ";
-    for (size_t i = 0; i < nosEmPosOrdem.size(); ++i) {
-        cout << nosEmPosOrdem[i]->rotulo;
-        if (i < nosEmPosOrdem.size() - 1) cout << " -> ";
-    }
-    cout << endl;
-    
-    // Obtendo profundidades
-    auto profundidades = arvore.obterProfundidades();
-    cout << "Profundidades dos nos:" << endl;
-    for (const No* no : nosEmPosOrdem) {
-        cout << "  " << no->rotulo << ": profundidade " << profundidades[no] << endl;
-    }
-    
-    // Obtendo tamanhos das subárvores
-    auto tamanhos = arvore.obterTamanhosDasSubarvores();
-    cout << "Tamanhos das subarvores:" << endl;
-    for (const No* no : nosEmPosOrdem) {
-        cout << "  Subarvore de " << no->rotulo << ": " << tamanhos[no] << " nos" << endl;
-    }
-    
-    cout << endl;
-    cout << "=== Fim da Demonstracao ===" << endl;
-    
-    // Demonstração da árvore aleatória
-    cout << endl;
-    cout << "=== Arvore Aleatoria ===" << endl;
-    
-    auto arvoreAleatoria = criarArvoreAleatoria(6, 42);
-    
-    if (arvoreAleatoria) {
-        Arvore arvoreRandom(move(arvoreAleatoria));
-        cout << "Estrutura da arvore aleatoria:" << endl;
-        cout << arvoreRandom << endl;
         
-        // Demonstrar funções úteis para Selkow
-        cout << "=== Funcoes Uteis para Selkow ===" << endl;
-        cout << "Total de nos: " << arvoreRandom.contarNos() << endl;
+        // Calcular regressão linear em escala logarítmica
+        double somaLogProduto = 0, somaLogTempo = 0;
+        double somaLogProdutoQuadrado = 0, somaLogProdutoTempo = 0;
+        int n = resultados.size();
         
-        // Testar profundidade de um nó específico
-        const No* raiz = arvoreRandom.obterNoRaiz();
-        if (raiz) {
-            cout << "Raiz eh folha? " << (arvoreRandom.ehFolha(raiz) ? "Sim" : "Nao") << endl;
+        cout << "Dados para regressão:" << endl;
+        cout << "Tamanho1 × Tamanho2 | Produto | Tempo(ms) | log(Produto) | log(Tempo)" << endl;
+        cout << string(75, '-') << endl;
+        
+        for (const auto& resultado : resultados) {
+            double produto = (double)resultado.tamanhoArvore1 * resultado.tamanhoArvore2;
+            double logProduto = log(produto);
+            double logTempo = log(resultado.tempoExecucaoMs);
+            
+            somaLogProduto += logProduto;
+            somaLogTempo += logTempo;
+            somaLogProdutoQuadrado += logProduto * logProduto;
+            somaLogProdutoTempo += logProduto * logTempo;
+            
+            cout << setw(7) << resultado.tamanhoArvore1 << " × " << setw(7) << resultado.tamanhoArvore2 
+                 << " | " << setw(8) << (int)produto 
+                 << " | " << setw(8) << fixed << setprecision(2) << resultado.tempoExecucaoMs
+                 << " | " << setw(11) << setprecision(3) << logProduto
+                 << " | " << setw(9) << setprecision(3) << logTempo << endl;
+        }
+        
+        cout << string(75, '-') << endl;
+        
+        // Calcular coeficiente angular (expoente) usando mínimos quadrados
+        double expoente = (n * somaLogProdutoTempo - somaLogProduto * somaLogTempo) / 
+                         (n * somaLogProdutoQuadrado - somaLogProduto * somaLogProduto);
+        
+        // Calcular coeficiente linear (constante)
+        double logConstante = (somaLogTempo - expoente * somaLogProduto) / n;
+        double constante = exp(logConstante);
+        
+        // Calcular coeficiente de correlação R²
+        double mediaLogTempo = somaLogTempo / n;
+        double ssRes = 0, ssTot = 0;
+        
+        for (const auto& resultado : resultados) {
+            double produto = (double)resultado.tamanhoArvore1 * resultado.tamanhoArvore2;
+            double logProduto = log(produto);
+            double logTempo = log(resultado.tempoExecucaoMs);
+            double logTempoPredict = logConstante + expoente * logProduto;
+            
+            ssRes += (logTempo - logTempoPredict) * (logTempo - logTempoPredict);
+            ssTot += (logTempo - mediaLogTempo) * (logTempo - mediaLogTempo);
+        }
+        
+        double rSquared = 1.0 - (ssRes / ssTot);
+        
+        cout << endl;
+        cout << "Resultados da Regressão Linear:" << endl;
+        cout << "  Expoente (k): " << fixed << setprecision(3) << expoente << endl;
+        cout << "  Constante (c): " << setprecision(2) << constante << endl;
+        cout << "  R² (qualidade do ajuste): " << setprecision(4) << rSquared << endl;
+        cout << "  Complexidade aproximada: O((n1 × n2)^" << setprecision(2) << expoente << ")" << endl;
+        
+        // Interpretação da complexidade
+        cout << endl;
+        cout << "Interpretação:" << endl;
+        if (expoente < 0.8) {
+            cout << "  Complexidade sublinear - algoritmo muito eficiente" << endl;
+        } else if (expoente >= 0.8 && expoente < 1.2) {
+            cout << "  Complexidade aproximadamente linear O(n×m)" << endl;
+        } else if (expoente >= 1.2 && expoente < 1.8) {
+            cout << "  Complexidade entre linear e quadrática" << endl;
+        } else if (expoente >= 1.8 && expoente < 2.2) {
+            cout << "  Complexidade aproximadamente quadrática O((n×m)²)" << endl;
+        } else {
+            cout << "  Complexidade super-quadrática - pode ser problemática para inputs grandes" << endl;
+        }
+        
+        if (rSquared > 0.95) {
+            cout << "  Ajuste excelente (R² > 0.95)" << endl;
+        } else if (rSquared > 0.90) {
+            cout << "  Ajuste bom (R² > 0.90)" << endl;
+        } else if (rSquared > 0.80) {
+            cout << "  Ajuste razoável (R² > 0.80)" << endl;
+        } else {
+            cout << "  Ajuste ruim (R² < 0.80) - modelo pode não ser apropriado" << endl;
         }
     }
+    
+    cout << endl;
+}
 
-
-    cout << "========================================" << endl;
-    cout << "    TESTE DO SISTEMA DE CUSTOS" << endl;
-    cout << "      Algoritmo de Selkow" << endl;
-    cout << "========================================" << endl;
+/**
+ * @brief Executa uma bateria de testes para diferentes tamanhos de árvores
+ */
+void executarTestesComplexidade() {
+    cout << "=== ANÁLISE DE COMPLEXIDADE DO ALGORITMO DE SELKOW ===" << endl;
     cout << endl;
     
-    testarCustosBasicos();
-    testarArvoreComSubarvores();
-    testarPropriedadesSankoff();
-    testarPerformanceCache();
-    testarCasosExtremos();
-
-    cout << "========================================" << endl;
-    cout << "    TESTES DO ALGORITMO DE SELKOW" << endl;
-    cout << "        Tree Edit Distance (TED)" << endl;
-    cout << "========================================" << endl;
+    vector<ResultadoPerformance> resultados;
+    vector<int> tamanhos = {10, 100, 1000, 10000};
+    
+    cout << "Executando testes para diferentes tamanhos de árvores..." << endl;
+    cout << "Formato: [Tamanho1] x [Tamanho2] -> Tempo (ms), Custo TED, Cache, Memória (KB)" << endl;
+    cout << "ATENÇÃO: Testes maiores (10K+ nós) podem demorar vários minutos!" << endl;
+    cout << string(100, '-') << endl;
+    
+    for (int tamanho : tamanhos) {
+        cout << "Testando árvores de tamanho " << tamanho << "...";
+        cout.flush(); // Força a impressão imediata
+        
+        auto inicioTeste = high_resolution_clock::now();
+        
+        // Teste com árvores de mesmo tamanho
+        ResultadoPerformance resultado = executarTestePerformance(tamanho, tamanho, 
+                                                                 tamanho * 10, 
+                                                                 tamanho * 20);
+        resultados.push_back(resultado);
+        
+        auto fimTeste = high_resolution_clock::now();
+        auto duracaoTeste = duration_cast<milliseconds>(fimTeste - inicioTeste);
+        
+        cout << " Concluído em " << duracaoTeste.count() << " ms" << endl;
+        
+        cout << fixed << setprecision(2);
+        cout << setw(7) << resultado.tamanhoArvore1 << " x " << setw(7) << resultado.tamanhoArvore2 
+             << " -> " << setw(10) << resultado.tempoExecucaoMs << " ms, "
+             << "Custo: " << setw(8) << resultado.custoTED << ", "
+             << "Cache: " << setw(8) << resultado.tamanhoCache << ", "
+             << "Mem: " << setw(8) << resultado.memoriaUtilizada << " KB" << endl;
+          // Para tamanhos grandes, adicionar informação extra
+        if (tamanho >= 1000) {
+            double produto = (double)tamanho * tamanho; // Para árvores de mesmo tamanho
+            cout << "    Cache/(n1×n2) ratio: " << setprecision(4) 
+                 << resultado.tamanhoCache / produto << endl;
+            cout << "    Tempo por (n1×n2): " << setprecision(8) 
+                 << resultado.tempoExecucaoMs / produto << " ms/(n1×n2)" << endl;
+        }
+    }
+    
+    cout << string(100, '-') << endl;
     cout << endl;
     
-    testarTEDBasico();
-    testarTEDArvoreIdentica();
-    testarTEDArvoreVazia();
-    testarTEDArvoreCompleta();
-    testarTEDCustosPersonalizados();
-    testarTEDMatrizesCompletas();
-    testarExemploEspecifico();
+    // Salvar resultados em arquivo
+    salvarResultadosCSV(resultados, "resultados_complexidade.csv");
+    
+    // Análise dos resultados
+    analisarResultados(resultados);
+}
 
+/**
+ * @brief Testa diferentes combinações de tamanhos de árvores
+ */
+void executarTestesVariados() {
+    cout << "=== TESTES COM DIFERENTES COMBINAÇÕES DE TAMANHOS ===" << endl;
+    cout << endl;
+    
+    vector<pair<int, int>> combinacoes = {
+        {100, 50}, {50, 100},     // Tamanhos diferentes
+        {1000, 500}, {500, 1000}, // Proporção 2:1
+        {100, 100},               // Tamanhos iguais pequenos
+        {1000, 1000},             // Tamanhos iguais médios
+        {5000, 2500}, {2500, 5000} // Proporção 2:1 maior
+    };
+    
+    cout << "Analisando diferentes proporções de tamanhos..." << endl;
+    cout << string(70, '-') << endl;
+    
+    for (auto& combo : combinacoes) {
+        ResultadoPerformance resultado = executarTestePerformance(combo.first, combo.second, 
+                                                                 combo.first * 7, 
+                                                                 combo.second * 13);
+        
+        cout << fixed << setprecision(2);
+        cout << "Árvores " << setw(2) << combo.first << " x " << setw(2) << combo.second 
+             << ": " << setw(8) << resultado.tempoExecucaoMs << " ms, "
+             << "Cache: " << setw(4) << resultado.tamanhoCache << " entradas" << endl;
+    }
+    
+    cout << string(70, '-') << endl;
+    cout << endl;
+}
+
+/**
+ * @brief Analisa o comportamento do cache durante a execução
+ */
+void analisarComportamentoCache() {
+    cout << "=== ANÁLISE DO COMPORTAMENTO DO CACHE ===" << endl;
+    cout << endl;
+    
+    vector<int> tamanhos = {10, 100, 1000, 5000};
+      cout << "Analisando eficiência do cache..." << endl;
+    cout << "Tamanho | Cache | Ratio Cache/(n1×n2) | Eficiência" << endl;
+    cout << string(60, '-') << endl;
+    
+    for (int tamanho : tamanhos) {
+        ResultadoPerformance resultado = executarTestePerformance(tamanho, tamanho, 
+                                                                 tamanho * 3, 
+                                                                 tamanho * 5);
+        
+        double produto = (double)tamanho * tamanho; // n1 × n2 para árvores iguais
+        double ratioCache = resultado.tamanhoCache / produto;
+          string eficiencia;
+        if (ratioCache < 0.01) eficiencia = "Excelente";
+        else if (ratioCache < 0.05) eficiencia = "Boa";
+        else if (ratioCache < 0.1) eficiencia = "Regular";
+        else eficiencia = "Baixa";
+        
+        cout << setw(7) << tamanho << " | " 
+             << setw(5) << resultado.tamanhoCache << " | "
+             << setw(18) << fixed << setprecision(5) << ratioCache << " | "
+             << eficiencia << endl;
+    }
+    
+    cout << string(60, '-') << endl;
+    cout << endl;
+}
+
+/**
+ * @brief Teste específico para medir escalabilidade
+ */
+void testeEscalabilidade() {
+    cout << "=== TESTE DE ESCALABILIDADE ===" << endl;
+    cout << endl;
+    
+    vector<int> tamanhosCriticos = {60, 70, 80, 90, 100};
+    
+    cout << "Testando limites de escalabilidade..." << endl;
+    cout << string(60, '-') << endl;
+    
+    for (int tamanho : tamanhosCriticos) {
+        cout << "Testando árvores de tamanho " << tamanho << "... ";
+        cout.flush();
+        
+        auto inicio = high_resolution_clock::now();
+        
+        try {
+            ResultadoPerformance resultado = executarTestePerformance(tamanho, tamanho, 
+                                                                     tamanho * 11, 
+                                                                     tamanho * 17);
+            
+            auto fim = high_resolution_clock::now();
+            auto duracaoTotal = duration_cast<milliseconds>(fim - inicio);
+            
+            cout << "OK (" << duracaoTotal.count() << " ms total)" << endl;
+            cout << "  Tempo algoritmo: " << fixed << setprecision(1) 
+                 << resultado.tempoExecucaoMs << " ms" << endl;
+            cout << "  Cache: " << resultado.tamanhoCache << " entradas" << endl;
+            cout << "  Memória: " << setprecision(1) << resultado.memoriaUtilizada << " KB" << endl;
+            
+        } catch (const exception& e) {
+            cout << "ERRO: " << e.what() << endl;
+        } catch (...) {
+            cout << "ERRO: Exceção desconhecida" << endl;
+        }
+        
+        cout << endl;
+    }
+    
+    cout << string(60, '-') << endl;
+}
+
+/**
+ * @brief Teste de consistência dos resultados
+ */
+void testeConsistencia() {
+    cout << "=== TESTE DE CONSISTÊNCIA DOS RESULTADOS ===" << endl;
+    cout << endl;
+    
+    int tamanhoTeste = 1000;
+    
+    cout << "Verificando consistência com múltiplas execuções..." << endl;
+    cout << "Tamanho das árvores: " << tamanhoTeste << endl;
+    cout << string(50, '-') << endl;
+    
+    // Testar mesmas árvores múltiplas vezes para verificar consistência
+    vector<double> resultados;
+    vector<double> tempos;
+    
+    for (int i = 0; i < 5; i++) {
+        // Criar árvores aleatórias (mesmo seed para resultados iguais)
+        Arvore arvore1(criarArvoreAleatoria(tamanhoTeste, 42));
+        Arvore arvore2(criarArvoreAleatoria(tamanhoTeste, 84));
+        
+        CalculadorDeCustos calculador(1.0, 1.0, 1.0); // Sempre custos unitários
+        
+        auto inicio = high_resolution_clock::now();
+        TED ted(arvore1, arvore2, calculador);
+        double custo = ted.obterCusto();
+        auto fim = high_resolution_clock::now();
+        
+        auto duracao = duration_cast<microseconds>(fim - inicio);
+        
+        resultados.push_back(custo);
+        tempos.push_back(duracao.count() / 1000.0);
+        
+        cout << "Execução " << (i+1) << ": Custo = " << fixed << setprecision(1) 
+             << custo << ", Tempo = " << setprecision(2) << tempos.back() << " ms" << endl;
+    }
+    
+    // Verificar consistência
+    bool consistente = true;
+    double custoReferencia = resultados[0];
+    
+    for (double custo : resultados) {
+        if (abs(custo - custoReferencia) > 0.001) {
+            consistente = false;
+            break;
+        }
+    }
+    
+    cout << string(50, '-') << endl;
+    cout << "Consistência dos resultados: " << (consistente ? "OK" : "ERRO") << endl;
+    
+    if (!tempos.empty()) {
+        double tempoMedio = 0.0;
+        for (double t : tempos) tempoMedio += t;
+        tempoMedio /= tempos.size();
+        
+        cout << "Tempo médio de execução: " << fixed << setprecision(2) 
+             << tempoMedio << " ms" << endl;
+    }
+    
+    cout << endl;
+}
+
+/**
+ * @brief Função principal com menu de testes
+ */
+int main() {
     cout << "========================================" << endl;
-    cout << "           TESTES COMPLETOS" << endl;
+    cout << "  ANÁLISE DE PERFORMANCE - ALGORITMO DE SELKOW" << endl;
+    cout << "       Tree Edit Distance (TED)" << endl;
     cout << "========================================" << endl;
+    cout << endl;
+      // Executar todos os testes de performance
+    try {
+        
+        // 1. Análise principal de complexidade
+        executarTestesComplexidade();
+        
+        // 2. Testes com diferentes proporções
+        executarTestesVariados();
+        
+        // 3. Análise do comportamento do cache
+        analisarComportamentoCache();
+        
+        // 4. Teste de consistência dos resultados
+        testeConsistencia();
+        
+    } catch (const exception& e) {
+        cout << "ERRO durante execução: " << e.what() << endl;
+        return 1;
+    }
     
     return 0;
 }
