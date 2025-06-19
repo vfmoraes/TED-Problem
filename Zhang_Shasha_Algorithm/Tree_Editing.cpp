@@ -84,6 +84,12 @@ int Tree_Editing::comput_tree_dist(int index1, int index2) {
     int lj = n2->li;
     int rows = interval_calc(li, index1);
     int cols = interval_calc(lj, index2);
+    // Checagem de limites antes de alocar as matrizes
+    // if (rows < 0 || cols < 0) {
+    //     // Não imprime, apenas retorna erro
+    //     exit(1);
+    // }
+    forest_dist.clear();
     forest_dist.resize(rows + 1, vector<int>(cols + 1, 0));
     forest_dist[0][0] = 0;
     for (int di = 1; di <= rows; di++) {
@@ -96,6 +102,9 @@ int Tree_Editing::comput_tree_dist(int index1, int index2) {
         for (int dj = 1; dj <= cols; dj++) {
             int node_i_idx = li + di - 1;
             int node_j_idx = lj + dj - 1;
+            // if (node_i_idx < 0 || node_i_idx >= (int)nodes1.size() || node_j_idx < 0 || node_j_idx >= (int)nodes2.size()) {
+            //     exit(1);
+            // }
             Node* ni = get_node1(node_i_idx);
             Node* nj = get_node2(node_j_idx);
             if (ni->li == li && nj->li == lj) {
@@ -104,12 +113,26 @@ int Tree_Editing::comput_tree_dist(int index1, int index2) {
                 int ins_cost = forest_dist[di][dj-1] + add_cost;
                 int upd_cost = forest_dist[di-1][dj-1] + update_cost;
                 forest_dist[di][dj] = std::min(del_cost, std::min(ins_cost, upd_cost));
-                tree_dist[ni->walking_index+1][nj->walking_index+1] = forest_dist[di][dj];
+                int ti = ni->walking_index+1;
+                int tj = nj->walking_index+1;
+                // if (ti < 0 || ti >= (int)tree_dist.size() || tj < 0 || tj >= (int)tree_dist[0].size()) {
+                //     exit(1);
+                // }
+                tree_dist[ti][tj] = forest_dist[di][dj];
             } else {
                 int del_cost = forest_dist[di-1][dj] + remove_cost;
                 int ins_cost = forest_dist[di][dj-1] + add_cost;
-                int sub_cost = forest_dist[ni->li - li][nj->li - lj] + 
-                               tree_dist[ni->walking_index+1][nj->walking_index+1];
+                int sub_di = ni->li - li;
+                int sub_dj = nj->li - lj;
+                // if (sub_di < 0 || sub_di >= (int)forest_dist.size() || sub_dj < 0 || sub_dj >= (int)forest_dist[0].size()) {
+                //     exit(1);
+                // }
+                int ti = ni->walking_index+1;
+                int tj = nj->walking_index+1;
+                // if (ti < 0 || ti >= (int)tree_dist.size() || tj < 0 || tj >= (int)tree_dist[0].size()) {
+                //     exit(1);
+                // }
+                int sub_cost = forest_dist[sub_di][sub_dj] + tree_dist[ti][tj];
                 forest_dist[di][dj] = std::min(del_cost, std::min(ins_cost, sub_cost));
             }
         }
@@ -125,6 +148,12 @@ int Tree_Editing::tree_dist_calc(Tree T1, Tree T2) {
     reverse(keyroots1.begin(), keyroots1.end());
     reverse(keyroots2.begin(), keyroots2.end());
     tree_dist.resize(nodes1.size() + 1, vector<int>(nodes2.size() + 1, 0));
+    for (int i = 1; i <= nodes1.size(); ++i) {
+        tree_dist[i][0] = tree_dist[i-1][0] + remove_cost;
+    }
+    for (int j = 1; j <= nodes2.size(); ++j) {
+        tree_dist[0][j] = tree_dist[0][j-1] + add_cost;
+    }
     for (Node* n1 : keyroots1) {
         for (Node* n2 : keyroots2) {
             int i = n1->walking_index;
