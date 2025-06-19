@@ -5,6 +5,26 @@
 
 using namespace std;
 
+// Função auxiliar para imprimir os nós da árvore
+void print_tree_nodes(const vector<Node*>& nodes, const string& title) {
+    cout << title << endl;
+    for (const Node* node : nodes) {
+        cout << "Nó: " << node->label 
+             << ", walking_index: " << node->walking_index
+             << ", li: " << node->li << endl;
+    }
+}
+
+// Função auxiliar para imprimir keyroots
+void print_tree_keyroots(const vector<Node*>& keyroots, const string& title) {
+    cout << title << endl;
+    for (const Node* n : keyroots) {
+        if (n)
+            cout << "Nó: " << n->label << ", walking_index: " << n->walking_index 
+                 << ", li: " << n->li << endl;
+    }
+}
+
 // =================== Node class implementation ===================
 
 /**
@@ -111,45 +131,4 @@ void Tree::find_keyroots(Node *current_node, int &last_li) {
    
    // A inversão não deve ser feita aqui dentro da recursão
    // Ela deve ser feita uma única vez após todas as chamadas recursivas
-}
-
-/**
-* @brief Prints the nodes of the tree in post-order traversal.
-* @param node Pointer to the current node.
-*/
-void print_postorder(Node *node) {
-   if (!node)
-       return;
-   for (Node *child : node->children)
-       print_postorder(child);
-   cout << "Node: " << node->label << ", walk_index: " << node->walking_index << ", Li: " << node->li << endl;
-}
-
-/**
-* @brief Prints the post-order indices saved in the tree.
-* @param indices Vector of pointers to the indexed nodes.
-*/
-void print_indices(const vector<Node *> &indices) {
-   cout << "Post-order indices saved in the tree:" << endl;
-   for (size_t i = 0; i < indices.size(); ++i)
-   {
-       const Node *node = indices[i];
-       if (node)
-           cout << "Position " << i << ": Node " << node->label
-                << ", walk_index: " << node->walking_index
-                << ", Li: " << node->li << endl;
-   }
-}
-
-/**
-* @brief Prints the keyroots found in the tree.
-* @param LR_keyroots Vector of pointers to the keyroot nodes.
-*/
-void print_keyroots(const vector<Node*> &LR_keyroots) {
-   cout << "Keyroots in the tree:" << endl;
-   for (size_t i = 0; i < LR_keyroots.size(); ++i)
-   {
-       cout << LR_keyroots[i]->label << " ";
-   }
-   cout << endl;
 }
