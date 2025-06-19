@@ -186,11 +186,10 @@ void testarTEDBasico() {
     
     cout << "Árvore A2:" << endl;
     cout << a2 << endl;
-    
-    CalculadorDeCustos calculador(1.0, 1.0, 1.0);
-    TED ted(a1, a2, calculador);
-    
-    ted.imprimirMatrizCusto();
+      CalculadorDeCustos calculador(1.0, 1.0, 1.0);
+    TED ted(a1, a2, calculador);    cout << "=== Análise Detalhada do Cálculo ===" << endl;
+    ted.imprimirDetalhesCalculo();
+    ted.imprimirMatrizesCustos();
     cout << "Custo TED esperado: 1 (C->D)" << endl;
     cout << "Custo TED calculado: " << ted.obterCusto() << endl;
     cout << endl;
@@ -214,11 +213,10 @@ void testarTEDArvoreIdentica() {
     
     cout << "Ambas árvores são idênticas:" << endl;
     cout << a1 << endl;
-    
-    CalculadorDeCustos calculador(1.0, 1.0, 1.0);
-    TED ted(a1, a2, calculador);
-    
-    ted.imprimirMatrizCusto();
+      CalculadorDeCustos calculador(1.0, 1.0, 1.0);
+    TED ted(a1, a2, calculador);    cout << "=== Análise Detalhada do Cálculo ===" << endl;
+    ted.imprimirDetalhesCalculo();
+    ted.imprimirMatrizesCustos();
     cout << "Custo TED esperado: 0 (árvores idênticas)" << endl;
     cout << "Custo TED calculado: " << ted.obterCusto() << endl;
     cout << endl;
@@ -243,11 +241,10 @@ void testarTEDArvoreVazia() {
     
     cout << "Árvore A2 (complexa):" << endl;
     cout << a2 << endl;
-    
-    CalculadorDeCustos calculador(1.0, 1.0, 1.0);
-    TED ted(a1, a2, calculador);
-    
-    ted.imprimirMatrizCusto();
+      CalculadorDeCustos calculador(1.0, 1.0, 1.0);
+    TED ted(a1, a2, calculador);    cout << "=== Análise Detalhada do Cálculo ===" << endl;
+    ted.imprimirDetalhesCalculo();
+    ted.imprimirMatrizesCustos();
     cout << "Custo TED (inserir B e C): " << ted.obterCusto() << endl;
     cout << endl;
 }
@@ -263,11 +260,10 @@ void testarTEDArvoreCompleta() {
     
     cout << "Árvore A1:" << endl;
     imprimirArvoreRecursivamente(cout, a1.obterNoRaiz(), "", false);
-    cout << endl << "Árvore A2:" << endl;
-    imprimirArvoreRecursivamente(cout, a2.obterNoRaiz(), "", false);
-    cout << endl;
-
-    ted.imprimirMatrizCusto();
+    cout << endl << "Árvore A2:" << endl;    imprimirArvoreRecursivamente(cout, a2.obterNoRaiz(), "", false);
+    cout << endl;    cout << "=== Análise Detalhada do Cálculo ===" << endl;
+    ted.imprimirDetalhesCalculo();
+    ted.imprimirMatrizesCustos();
     cout << "Custo TED calculado: " << ted.obterCusto() << endl;
     cout << endl;
 }
@@ -290,21 +286,112 @@ void testarTEDCustosPersonalizados() {
     
     cout << "Árvore A2:" << endl;
     cout << a2 << endl;
-    
-    // Teste com custos diferentes
+      // Teste com custos diferentes
     CalculadorDeCustos calculador1(2.0, 3.0, 1.5); // inserção, deleção, rotulação
-    TED ted1(a1, a2, calculador1);
-    
-    cout << "Com custos personalizados (ins:2.0, del:3.0, rot:1.5):" << endl;
-    ted1.imprimirMatrizCusto();
+    TED ted1(a1, a2, calculador1);    cout << "Com custos personalizados (ins:2.0, del:3.0, rot:1.5):" << endl;
+    cout << "=== Análise Detalhada do Cálculo ===" << endl;
+    ted1.imprimirDetalhesCalculo();
+    ted1.imprimirMatrizesCustos();
     cout << "Custo TED: " << ted1.obterCusto() << endl;
     
-    CalculadorDeCustos calculador2(1.0, 1.0, 1.0); // rotulação cara
+    CalculadorDeCustos calculador2(1.0, 1.0, 1.0); // custos padrão
     TED ted2(a1, a2, calculador2);
-    
-    cout << "\nCom rotulação cara (ins:1.0, del:1.0, rot:1.0):" << endl;
-    ted2.imprimirMatrizCusto();
+      cout << "\nCom custos padrão (ins:1.0, del:1.0, rot:1.0):" << endl;
+    cout << "=== Análise Detalhada do Cálculo ===" << endl;
+    ted2.imprimirDetalhesCalculo();
+    ted2.imprimirMatrizesCustos();
     cout << "Custo TED: " << ted2.obterCusto() << endl;
+    cout << endl;
+}
+
+void testarTEDMatrizesCompletas() {
+    cout << "=== TESTE TED ESPECIAL: Demonstração Completa de Matrizes ===" << endl;
+    
+    // Árvore A1: A -> {B -> D, C}
+    auto noD1 = criarNo("D");
+    auto noB1 = criarNo("B");
+    noB1->adicionarFilho(move(noD1));
+    auto noC1 = criarNo("C");
+    auto raiz1 = criarNo("A");
+    raiz1->adicionarFilho(move(noB1));
+    raiz1->adicionarFilho(move(noC1));
+    Arvore a1(move(raiz1));
+    
+    // Árvore A2: A -> {E, F -> G}
+    auto noE2 = criarNo("E");
+    auto noG2 = criarNo("G");
+    auto noF2 = criarNo("F");
+    noF2->adicionarFilho(move(noG2));
+    auto raiz2 = criarNo("A");
+    raiz2->adicionarFilho(move(noE2));
+    raiz2->adicionarFilho(move(noF2));
+    Arvore a2(move(raiz2));
+    
+    cout << "🌳 ÁRVORE A1:" << endl;
+    cout << a1 << endl;
+    
+    cout << "🌳 ÁRVORE A2:" << endl;
+    cout << a2 << endl;
+    
+    CalculadorDeCustos calculador(1.0, 1.0, 1.0);
+    TED ted(a1, a2, calculador);
+    
+    cout << "🎯 RESULTADO FINAL:" << endl;    cout << "Custo TED calculado: " << ted.obterCusto() << endl;
+    
+    cout << "\n📊 ANÁLISE DETALHADA:" << endl;
+    ted.imprimirDetalhesCalculo();
+    
+    cout << "\n📋 MATRIZES DE CUSTOS:" << endl;
+    ted.imprimirMatrizesCustos();
+    
+    cout << "\n🏆 DEMONSTRAÇÃO CONCLUÍDA COM SUCESSO!" << endl;
+    cout << "================================================" << endl;
+}
+
+void testarExemploEspecifico() {
+    cout << "=== TESTE EXEMPLO ESPECÍFICO (Análise Correta) ===" << endl;
+    
+    // Árvore A: R -> P -> {C, D}
+    auto noC1 = criarNo("C");
+    auto noD1 = criarNo("D");
+    auto noP = criarNo("P");
+    noP->adicionarFilho(move(noC1));
+    noP->adicionarFilho(move(noD1));
+    auto raizA = criarNo("R");
+    raizA->adicionarFilho(move(noP));
+    Arvore arvoreA(move(raizA));
+    
+    // Árvore B: R -> Q -> {C, E}
+    auto noC2 = criarNo("C");
+    auto noE2 = criarNo("E");
+    auto noQ = criarNo("Q");
+    noQ->adicionarFilho(move(noC2));
+    noQ->adicionarFilho(move(noE2));
+    auto raizB = criarNo("R");
+    raizB->adicionarFilho(move(noQ));
+    Arvore arvoreB(move(raizB));
+    
+    cout << "Árvore A: R -> P -> {C, D}" << endl;
+    cout << arvoreA << endl;
+    
+    cout << "Árvore B: R -> Q -> {C, E}" << endl;
+    cout << arvoreB << endl;
+    
+    CalculadorDeCustos calculador(1.0, 1.0, 1.0);
+    TED ted(arvoreA, arvoreB, calculador);
+    
+    cout << "=== ANÁLISE DO EXEMPLO ===" << endl;
+    cout << "Esperado: Matriz principal 2x2 para florestas {P} vs {Q}" << endl;
+    cout << "Esperado: Matriz secundária 3x3 para florestas {C,D} vs {C,E}" << endl;
+    cout << "Custo esperado P->Q: 1 (renomeação) + custo edição florestas" << endl;
+    cout << "Custo edição {C,D}->{C,E}: deve considerar C->C=0, D->E=1" << endl;
+    cout << endl;
+    
+    ted.imprimirDetalhesCalculo();
+    ted.imprimirMatrizesCustos();
+    
+    cout << "Custo TED final calculado: " << ted.obterCusto() << endl;
+    cout << "Tamanho do cache: " << ted.obterTamanhoCache() << " entradas" << endl;
     cout << endl;
 }
 
@@ -418,6 +505,8 @@ int main() {
     testarTEDArvoreVazia();
     testarTEDArvoreCompleta();
     testarTEDCustosPersonalizados();
+    testarTEDMatrizesCompletas();
+    testarExemploEspecifico();
 
     cout << "========================================" << endl;
     cout << "           TESTES COMPLETOS" << endl;

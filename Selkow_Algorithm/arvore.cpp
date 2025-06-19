@@ -90,6 +90,16 @@ bool Arvore::ehFolha(const No* no) const {
     return no != nullptr && no->filhos.empty();
 }
 
+vector<const No*> Arvore::obterFilhos(const No* no) const {
+    vector<const No*> filhos;
+    if (no != nullptr) {
+        for (const auto& filho : no->filhos) {
+            filhos.push_back(filho.get());
+        }
+    }
+    return filhos;
+}
+
 // Funções utilitárias globais
 void imprimirArvoreRecursivamente(ostream& streamDeSaida, const No* noAtual, const string& prefixoDeIndentacao, bool ehUltimoFilho) {
     if (noAtual == nullptr) return;

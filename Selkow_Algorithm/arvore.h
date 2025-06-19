@@ -101,6 +101,13 @@ public:
     bool ehFolha(const No* no) const;
 
     /**
+     * @brief Obtém os filhos de um nó específico
+     * @param no Ponteiro para o nó
+     * @return Vetor com ponteiros para os filhos do nó
+     */
+    vector<const No*> obterFilhos(const No* no) const;
+
+    /**
      * @brief Obtém um nó específico pelo seu índice na ordenação pós-ordem
      * @param indice Índice do nó na lista pós-ordem (0-based)
      * @return Ponteiro para o nó ou nullptr se índice inválido
