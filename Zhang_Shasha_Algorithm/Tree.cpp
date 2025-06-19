@@ -2,8 +2,29 @@
 
 #include <iostream>
 #include <algorithm>
+#include <unordered_set>
 
 using namespace std;
+
+// Função auxiliar para imprimir os nós da árvore
+void print_tree_nodes(const vector<Node*>& nodes, const string& title) {
+    cout << title << endl;
+    for (const Node* node : nodes) {
+        cout << "Nó: " << node->label 
+             << ", walking_index: " << node->walking_index
+             << ", li: " << node->li << endl;
+    }
+}
+
+// Função auxiliar para imprimir keyroots
+void print_tree_keyroots(const vector<Node*>& keyroots, const string& title) {
+    cout << title << endl;
+    for (const Node* n : keyroots) {
+        if (n)
+            cout << "Nó: " << n->label << ", walking_index: " << n->walking_index 
+                 << ", li: " << n->li << endl;
+    }
+}
 
 // =================== Node class implementation ===================
 
@@ -45,6 +66,15 @@ Node *Tree::get_root() {
 */
 vector<Node *> Tree::get_indices() {
    return indices;
+}
+
+
+Node* Tree::get_node(int index) {
+   if (index < 0 || index >= indices.size()) {
+       cerr << "Index out of bounds: " << index << endl;
+       return nullptr; // or throw an exception
+   }
+   return indices[index];
 }
 
 /**
@@ -99,81 +129,7 @@ void Tree::find_keyroots(Node *current_node, int &last_li) {
    for ( Node* child : current_node->children) {
        find_keyroots(child, last_li);
    }
-
-   reverse(LR_keyroots.begin(), LR_keyroots.end());
-}
-
-/**
-* @brief Prints the nodes of the tree in post-order traversal.
-* @param node Pointer to the current node.
-*/
-void print_postorder(Node *node) {
-   if (!node)
-       return;
-   for (Node *child : node->children)
-       print_postorder(child);
-   cout << "Node: " << node->label << ", walk_index: " << node->walking_index << ", Li: " << node->li << endl;
-}
-
-/**
-* @brief Prints the post-order indices saved in the tree.
-* @param indices Vector of pointers to the indexed nodes.
-*/
-void print_indices(const vector<Node *> &indices) {
-   cout << "Post-order indices saved in the tree:" << endl;
-   for (size_t i = 0; i < indices.size(); ++i)
-   {
-       const Node *node = indices[i];
-       if (node)
-           cout << "Position " << i << ": Node " << node->label
-                << ", walk_index: " << node->walking_index
-                << ", Li: " << node->li << endl;
-   }
-}
-
-/**
-* @brief Prints the keyroots found in the tree.
-* @param LR_keyroots Vector of pointers to the keyroot nodes.
-*/
-void print_keyroots(const vector<Node*> &LR_keyroots) {
-   cout << "Keyroots in the tree:" << endl;
-   for (size_t i = 0; i < LR_keyroots.size(); ++i)
-   {
-       cout << LR_keyroots[i]->label << " ";
-   }
-   cout << endl;
-}
-
-int main() {
-   Node node_a = Node('a', -1, -1);
-   Node node_b = Node('b', -1, -1);
-   Node node_c = Node('c', -1, -1);
-   Node node_f = Node('f', -1, -1);
-   Node node_e = Node('e', -1, -1);
-   Node node_d = Node('d', -1, -1);
-
-   node_c.add_child(&node_a);
-   node_c.add_child(&node_b); 
-
-   node_e.add_child(&node_d); 
-
-   node_f.add_child(&node_c); 
-   node_f.add_child(&node_e);
-
-   Tree tree(&node_f);
-
-   int counter = 1;
-   tree.post_order(tree.get_root(), counter);
-
-   std::cout << "Nodes in post-order:" << std::endl;
-   //print_postorder(tree.get_root());
-   //print_indices(tree.get_indices());
-
-   // LR_keyroots 
-   int last_li = -1;
-
-   tree.find_keyroots(tree.get_root(), last_li);
-   print_keyroots(tree.get_LR_keyroots());
-
-   return 0;
+   
+   // A inversão não deve ser feita aqui dentro da recursão
+   // Ela deve ser feita uma única vez após todas as chamadas recursivas
 }
