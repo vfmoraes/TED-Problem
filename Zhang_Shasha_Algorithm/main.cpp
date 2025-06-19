@@ -12,13 +12,13 @@ using namespace std;
 void print_matrix(const vector<vector<int>>& matrix, const vector<Node*>& nodes1, const vector<Node*>& nodes2, const string& title) {
     cout << "\n" << title << ":\n";
     cout << setw(8) << " ";
-    cout << setw(8) << "∅";
+    cout << setw(10) << "∅";
     for (Node* node : nodes2) {
         cout << setw(8) << node->label;
     }
     cout << endl;
     cout << string(8 * (nodes2.size() + 2), '-') << endl;
-    cout << setw(8) << "∅";
+    cout << setw(10) << "∅";
     for (size_t j = 0; j <= nodes2.size(); ++j) {
         cout << setw(8) << matrix[0][j];
     }
@@ -54,7 +54,7 @@ void print_keyroots(const vector<Node*>& keyroots, const string& title) {
 }
 
 // Função para criar a árvore 1
-Tree create_tree1(vector<Node*>& nodes) {
+Tree create_test_tree1(vector<Node*>& nodes) {
     Node* a1 = new Node('a', -1, -1);
     Node* b1 = new Node('b', -1, -1);
     Node* c1 = new Node('c', -1, -1);
@@ -65,18 +65,92 @@ Tree create_tree1(vector<Node*>& nodes) {
     a1->add_child(b1);
     a1->add_child(c1);
     nodes = {a1, b1, c1, d1, e1};
-    return Tree(a1);
+    Tree tree1(a1);
+
+    // Realiza a travessia pós-ordem para atribuir índices e valores Li
+    int counter1 = 0;
+    tree1.post_order(tree1.get_root(), counter1);
+    print_tree_nodes(tree1, "Árvore 1 (post-order):");
+    
+    // Encontra os keyroots da árvore 1
+    int last_li1 = -1;
+    tree1.find_keyroots(tree1.get_root(), last_li1);
+    vector<Node*> keyroots1 = tree1.get_LR_keyroots();
+    reverse(keyroots1.begin(), keyroots1.end());
+    print_keyroots(keyroots1, "\nKeyroots da Árvore 1 (após inversão):");
+
+    return tree1;
 }
 
 // Função para criar a árvore 2
-Tree create_tree2(vector<Node*>& nodes) {
+Tree create_test_tree2(vector<Node*>& nodes) {
     Node* a2 = new Node('a', -1, -1);
     Node* b2 = new Node('b', -1, -1);
     Node* f2 = new Node('f', -1, -1);
     a2->add_child(b2);
     a2->add_child(f2);
     nodes = {a2, b2, f2};
-    return Tree(a2);
+
+    Tree tree2(a2);
+
+    // Realiza a travessia pós-ordem para atribuir índices e valores Li
+    int counter2 = 0;
+    tree2.post_order(tree2.get_root(), counter2);
+    print_tree_nodes(tree2, "\nÁrvore 2 (post-order):");
+
+    // Encontra os keyroots da árvore 2
+    int last_li2 = -1;
+    tree2.find_keyroots(tree2.get_root(), last_li2);
+    vector<Node*> keyroots2 = tree2.get_LR_keyroots();
+    reverse(keyroots2.begin(), keyroots2.end());
+    print_keyroots(keyroots2, "\nKeyroots da Árvore 2 (após inversão):");
+    return tree2;
+}
+
+// Função para criar uma árvore com n elementos
+Tree create_tree(int n) {
+    vector<Node*> nodes;
+    Node* root = new Node('a', -1, -1);
+    nodes.push_back(root);
+    for (int i = 1; i < n; ++i) {
+        Node* child = new Node('a' + i, -1, -1);
+        root->add_child(child);
+        nodes.push_back(child);
+    }
+    Tree tree(root);
+
+
+    return Tree(root);
+}
+
+// Função utilitária para criar um novo Node*
+Node* criarNo(const char& label) {
+    return new Node(label, -1, -1);
+}
+
+// Função para criar uma árvore aleatória com numNos nós e semente seed
+Node* criarArvoreAleatoria(int numNos, int seed) {
+    char charNo = 'a'; // Começar com 'a' para os rótulos dos nós
+    if (numNos <= 0) {
+        return nullptr;
+    }
+    srand(seed);
+    vector<Node*> nosDisponiveis;
+    // Criar nó raiz
+    Node* raiz = criarNo(charNo);
+    charNo++;
+    nosDisponiveis.push_back(raiz);
+    // Adicionar nós restantes
+    for (int i = 1; i < numNos; ++i) {
+        Node* novoNo = criarNo(charNo);
+        charNo++;
+        // Escolher pai aleatório
+        Node* pai = nosDisponiveis[rand() % nosDisponiveis.size()];
+        pai->add_child(novoNo);
+        // Adicionar novo nó ao pool
+        nosDisponiveis.push_back(novoNo);
+    }
+    return raiz;
 }
 
 // Função para liberar memória dos nós
@@ -137,8 +211,8 @@ public:
             subnodes2.push_back(get_node2(j));
         }
         
-        cout << "Matriz forest_dist inicializada:" << endl;
-        print_matrix(forest_dist, subnodes1, subnodes2, "Forest Distance (Inicial)");
+        // cout << "Matriz forest_dist inicializada:" << endl;
+        // print_matrix(forest_dist, subnodes1, subnodes2, "Forest Distance (Inicial)");
 
         // Cálculo principal da distância de edição
         for (int di = 1; di <= rows; di++) {
@@ -160,9 +234,9 @@ public:
                     
                     tree_dist[ni->walking_index+1][nj->walking_index+1] = forest_dist[di][dj]; //index +1 para pular o índice 0, correspondente ao vazio
                     
-                    cout << "Nós " << ni->label << " e " << nj->label << " são folhas mais à esquerda." << endl;
-                    cout << "Custo de atualização: " << update_cost << endl;
-                    cout << "Custos: del=" << del_cost << ", ins=" << ins_cost << ", upd=" << upd_cost << endl;
+                    // cout << "Nós " << ni->label << " e " << nj->label << " são folhas mais à esquerda." << endl;
+                    // cout << "Custo de atualização: " << update_cost << endl;
+                    // cout << "Custos: del=" << del_cost << ", ins=" << ins_cost << ", upd=" << upd_cost << endl;
                 } else {
                     // Pelo menos um não é folha mais à esquerda
                     int del_cost = forest_dist[di-1][dj] + remove_cost;      // Deleção
@@ -174,9 +248,9 @@ public:
                     // Usar min para cada par
                     forest_dist[di][dj] = std::min(del_cost, std::min(ins_cost, sub_cost));
                     
-                    cout << "Nós " << ni->label << " e " << nj->label << " não são ambos folhas mais à esquerda." << endl;
-                    cout << "Usando tree_dist[" << ni->walking_index << "][" << nj->walking_index 
-                         << "] = " << tree_dist[ni->walking_index][nj->walking_index] << endl;
+                    // cout << "Nós " << ni->label << " e " << nj->label << " não são ambos folhas mais à esquerda." << endl;
+                    // cout << "Usando tree_dist[" << ni->walking_index << "][" << nj->walking_index 
+                    //      << "] = " << tree_dist[ni->walking_index][nj->walking_index] << endl;
                 }
                 
                 cout << "forest_dist[" << di << "][" << dj << "] = " << forest_dist[di][dj] << endl;
@@ -209,6 +283,13 @@ public:
         // Preparar a matriz para a distância entre árvores
         tree_dist.resize(nodes1.size() + 1, vector<int>(nodes2.size() + 1, 0));
 
+        for (int i = 1; i <= nodes1.size(); ++i) {
+            tree_dist[i][0] = tree_dist[i-1][0] + remove_cost; // Custo de remoção
+        }
+        for (int j = 1; j <= nodes2.size(); ++j) {
+            tree_dist[0][j] = tree_dist[0][j-1] + add_cost; // Custo de adição
+        }
+
         // Para cada par de keyroots, calcular a distância entre as subárvores
         for (Node* n1 : keyroots1) {
             for (Node* n2 : keyroots2) {
@@ -232,32 +313,15 @@ public:
         print_matrix(tree_dist, nodes1, nodes2, "Distância entre Árvores");
 
         // Retornar a distância entre as árvores completas
-        return tree_dist[nodes1.back()->walking_index][nodes2.back()->walking_index];
+        return tree_dist[nodes1.back()->walking_index+1][nodes2.back()->walking_index+1];
     }
 };
 
 int main() {
     // Criar árvores e armazenar ponteiros para liberar depois
     vector<Node*> nodes1, nodes2;
-    Tree tree1 = create_tree1(nodes1);
-    int counter1 = 0;
-    tree1.post_order(tree1.get_root(), counter1);
-    print_tree_nodes(tree1, "Árvore 1 (post-order):");
-    int last_li1 = -1;
-    tree1.find_keyroots(tree1.get_root(), last_li1);
-    vector<Node*> keyroots1 = tree1.get_LR_keyroots();
-    reverse(keyroots1.begin(), keyroots1.end());
-    print_keyroots(keyroots1, "\nKeyroots da Árvore 1 (após inversão):");
-
-    Tree tree2 = create_tree2(nodes2);
-    int counter2 = 0;
-    tree2.post_order(tree2.get_root(), counter2);
-    print_tree_nodes(tree2, "\nÁrvore 2 (post-order):");
-    int last_li2 = -1;
-    tree2.find_keyroots(tree2.get_root(), last_li2);
-    vector<Node*> keyroots2 = tree2.get_LR_keyroots();
-    reverse(keyroots2.begin(), keyroots2.end());
-    print_keyroots(keyroots2, "\nKeyroots da Árvore 2 (após inversão):");
+    Tree tree1 = create_test_tree1(nodes1);
+    Tree tree2 = create_test_tree2(nodes2);
 
     DebugTreeEditing editor(&tree1, &tree2);
     int distance = editor.tree_dist_calc(tree1, tree2);
@@ -266,5 +330,7 @@ int main() {
     cout << "==============================================\n";
     free_nodes(nodes1);
     free_nodes(nodes2);
+
+    
     return 0;
 }

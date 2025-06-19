@@ -6,13 +6,13 @@
 void print_tree_editing_matrix(const vector<vector<int>>& matrix, const vector<Node*>& nodes1, const vector<Node*>& nodes2, const string& title) {
     cout << "\n" << title << ":\n";
     cout << setw(8) << " ";
-    cout << setw(8) << "∅";
+    cout << setw(10) << "∅";
     for (Node* node : nodes2) {
         cout << setw(8) << node->label;
     }
     cout << endl;
     cout << string(8 * (nodes2.size() + 2), '-') << endl;
-    cout << setw(8) << "∅";
+    cout << setw(10) << "∅";
     for (size_t j = 0; j <= nodes2.size(); ++j) {
         cout << setw(8) << matrix[0][j];
     }
