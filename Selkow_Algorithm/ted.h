@@ -17,7 +17,10 @@ private:
     const CalculadorDeCustos* calculador;
     const Arvore* arvore1;
     const Arvore* arvore2;
-    double custoFinal;
+    mutable double custoFinal;
+    
+    // Variável para armazenar o somatório das proporções das matrizes
+    mutable double espacoTotalMatrizes;
     
     // Estrutura para armazenar informações de debug
     mutable vector<vector<double>> ultimaMatrizCalculada;
@@ -26,20 +29,17 @@ private:
     
     // Métodos auxiliares para o algoritmo de Selkow
     double selkowRecursivo(const No* a1, const No* a2) const;
-    double calcularCustoFlorestas(const vector<const No*>& floresta1, 
-                                 const vector<const No*>& floresta2) const;
     double min(double a, double b, double c) const;
 
 public:
     TED(const Arvore& a1, const Arvore& a2, const CalculadorDeCustos& calculador);
     
     double obterCusto() const;
-    void limparCache();
+    double obterEspacoUtilizado() const;
     
     // Métodos para debug/análise
     void imprimirDetalhesCalculo() const;
     void imprimirMatrizesCustos() const;
-    size_t obterTamanhoCache() const;
 };
 
 #endif // TED_H

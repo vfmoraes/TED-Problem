@@ -134,5 +134,6 @@ void imprimirArvoreRecursivamente(ostream& streamDeSaida, const No* noAtual, con
 ostream& operator<<(ostream& streamDeSaida, const Arvore& arvoreParaImprimir);
 unique_ptr<No> criarNo(const string& rotulo);
 unique_ptr<No> criarArvoreAleatoria(int numNos, int seed);
+unique_ptr<No> criarArvoreCompleta(int numNos);
 
 #endif // ARVORE_H

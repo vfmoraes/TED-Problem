@@ -160,6 +160,27 @@ unique_ptr<No> criarArvoreAleatoria(int numNos, int seed) {
         // Adicionar novo nó ao pool (usar o ponteiro antes do move)
         nosDisponiveis.push_back(pai->filhos.back().get());
     }
+      return raiz;
+}
+
+unique_ptr<No> criarArvoreCompleta(int numNos) {
+    if (numNos <= 0) {
+        return nullptr;
+    }
+    
+    if (numNos == 1) {
+        // Árvore com apenas a raiz
+        return criarNo("0");
+    }
+    
+    // Criar nó raiz
+    auto raiz = criarNo("0");
+    
+    // Adicionar N-1 filhos (todos são folhas)
+    for (int i = 1; i < numNos; ++i) {
+        auto filho = criarNo(to_string(i));
+        raiz->adicionarFilho(move(filho));
+    }
     
     return raiz;
 }
