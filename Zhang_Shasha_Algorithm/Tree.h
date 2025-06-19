@@ -1,4 +1,4 @@
-#ifndef TESTE_H
+#ifndef TREE_H
 
 #include <iostream>
 #include <vector>
@@ -20,7 +20,7 @@ class Node {
 class Tree {
     private:
         Node* root;
-        vector<int> LR_keyroots;
+        vector<Node*> LR_keyroots;
         vector<Node*> indices;
 
     public:
@@ -28,15 +28,17 @@ class Tree {
 
         Node* get_root();
 
-        vector<int> get_LR_keyroots();
+        vector<Node*> get_LR_keyroots();
 
         vector<Node*> get_indices();
 
         void post_order(Node* current_node, int& counter);
+
+        void find_keyroots(Node*current_node, int &last_li);
 
 };
 
 
 
 
-#endif  //TESTE_H
+#endif  //TREE_H
