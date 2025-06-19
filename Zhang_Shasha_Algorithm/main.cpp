@@ -175,82 +175,91 @@ public:
     int comput_tree_dist(int index1, int index2) {
         cout << "Calculando distância entre subárvores enraizadas em " 
              << get_node1(index1)->label << " e " << get_node2(index2)->label << endl;
+        
+        // Obter os nós correspondentes aos índices
         Node* n1 = get_node1(index1);
         Node* n2 = get_node2(index2);
+        
+        // Obter os índices left-most leaf
         int li = n1->li;
         int lj = n2->li;
+        
         cout << "Índice left-most leaf para " << n1->label << ": " << li << endl;
         cout << "Índice left-most leaf para " << n2->label << ": " << lj << endl;
+        
+        // Calcular os tamanhos das florestas
         int rows = interval_calc(li, index1);
         int cols = interval_calc(lj, index2);
+        
         cout << "Tamanho da floresta 1: " << rows << endl;
         cout << "Tamanho da floresta 2: " << cols << endl;
-        // Checagem de limites antes de alocar as matrizes
-        if (rows < 0 || cols < 0) {
-            cerr << "Erro: tamanho de floresta negativo! rows=" << rows << ", cols=" << cols << endl;
-            exit(1);
-        }
-        forest_dist.clear();
+        
+        // Garantir que as matrizes têm o tamanho correto
         forest_dist.resize(rows + 1, vector<int>(cols + 1, 0));
+        
+        // Inicialização da matriz forest_dist
         forest_dist[0][0] = 0;
         for (int di = 1; di <= rows; di++) {
             forest_dist[di][0] = forest_dist[di-1][0] + remove_cost;
         }
         for (int dj = 1; dj <= cols; dj++) {
             forest_dist[0][dj] = forest_dist[0][dj-1] + add_cost;
-        }
+        }        // Extrair os nós relevantes para esta subárvore
         vector<Node*> subnodes1;
         vector<Node*> subnodes2;
+        
+        // Preencher subnodes1 usando get_node1
         for (int i = li; i <= index1; i++) {
             subnodes1.push_back(get_node1(i));
         }
+        
+        // Preencher subnodes2 usando get_node2
         for (int j = lj; j <= index2; j++) {
             subnodes2.push_back(get_node2(j));
         }
+        
+        cout << "Matriz forest_dist inicializada:" << endl;
+        print_matrix(forest_dist, subnodes1, subnodes2, "Forest Distance (Inicial)");
+
+        // Cálculo principal da distância de edição
         for (int di = 1; di <= rows; di++) {
-            for (int dj = 1; dj <= cols; dj++) {
-                int node_i_idx = li + di - 1;
-                int node_j_idx = lj + dj - 1;
-                // // Checagem de limites
-                // if (node_i_idx < 0 || node_i_idx >= (int)nodes1.size() || node_j_idx < 0 || node_j_idx >= (int)nodes2.size()) {
-                //     cerr << "Acesso fora do limite: node_i_idx=" << node_i_idx << ", node_j_idx=" << node_j_idx << endl;
-                //     exit(1);
-                // }
+            for (int dj = 1; dj <= cols; dj++) {                
+                int node_i_idx = li + di - 1;  // Correção: -1 para ajustar o índice
+                int node_j_idx = lj + dj - 1;  // Correção: -1 para ajustar o índice
+
                 Node* ni = get_node1(node_i_idx);
                 Node* nj = get_node2(node_j_idx);
                 if (ni->li == li && nj->li == lj) {
+                    // Ambos são folhas mais à esquerda
                     int update_cost = (ni->label == nj->label) ? 0 : rename_cost;
-                    int del_cost = forest_dist[di-1][dj] + remove_cost;
-                    int ins_cost = forest_dist[di][dj-1] + add_cost;
-                    int upd_cost = forest_dist[di-1][dj-1] + update_cost;
+                    int del_cost = forest_dist[di-1][dj] + remove_cost;      // Deleção
+                    int ins_cost = forest_dist[di][dj-1] + add_cost;         // Inserção
+                    int upd_cost = forest_dist[di-1][dj-1] + update_cost;    // Substituição
+                    
+                    // Usar min para cada par
                     forest_dist[di][dj] = std::min(del_cost, std::min(ins_cost, upd_cost));
-                    // Checagem de limites para tree_dist
-                    int ti = ni->walking_index+1;
-                    int tj = nj->walking_index+1;
-                    // if (ti < 0 || ti >= (int)tree_dist.size() || tj < 0 || tj >= (int)tree_dist[0].size()) {
-                    //     cerr << "Acesso fora do limite em tree_dist: ti=" << ti << ", tj=" << tj << endl;
-                    //     exit(1);
-                    // }
-                    // tree_dist[ti][tj] = forest_dist[di][dj];
+                    
+                    tree_dist[ni->walking_index+1][nj->walking_index+1] = forest_dist[di][dj]; //index +1 para pular o índice 0, correspondente ao vazio
+                    
+                    cout << "Nós " << ni->label << " e " << nj->label << " são folhas mais à esquerda." << endl;
+                    cout << "Custo de atualização: " << update_cost << endl;
+                    cout << "Custos: del=" << del_cost << ", ins=" << ins_cost << ", upd=" << upd_cost << endl;
                 } else {
-                    int del_cost = forest_dist[di-1][dj] + remove_cost;
-                    int ins_cost = forest_dist[di][dj-1] + add_cost;
-                    int sub_di = ni->li - li;
-                    int sub_dj = nj->li - lj;
-                    // // Checagem de limites para forest_dist e tree_dist
-                    // if (sub_di < 0 || sub_di >= (int)forest_dist.size() || sub_dj < 0 || sub_dj >= (int)forest_dist[0].size()) {
-                    //     cerr << "Acesso fora do limite em forest_dist: sub_di=" << sub_di << ", sub_dj=" << sub_dj << endl;
-                    //     exit(1);
-                    // }
-                    int ti = ni->walking_index+1;
-                    int tj = nj->walking_index+1;
-                    // if (ti < 0 || ti >= (int)tree_dist.size() || tj < 0 || tj >= (int)tree_dist[0].size()) {
-                    //     cerr << "Acesso fora do limite em tree_dist: ti=" << ti << ", tj=" << tj << endl;
-                    //     exit(1);
-                    // }
-                    int sub_cost = forest_dist[sub_di][sub_dj] + tree_dist[ti][tj];
+                    // Pelo menos um não é folha mais à esquerda
+                    int del_cost = forest_dist[di-1][dj] + remove_cost;      // Deleção
+                    int ins_cost = forest_dist[di][dj-1] + add_cost;         // Inserção
+                    int sub_cost = forest_dist[ni->li - li][nj->li - lj] + 
+                                   tree_dist[ni->walking_index+1][nj->walking_index+1];  // Operação de subárvore, 
+                                                                                         //index +1 para pular o índice 0, correspondente ao vazio
+                    
+                    // Usar min para cada par
                     forest_dist[di][dj] = std::min(del_cost, std::min(ins_cost, sub_cost));
+                    
+                    cout << "Nós " << ni->label << " e " << nj->label << " não são ambos folhas mais à esquerda." << endl;
+                    cout << "Usando tree_dist[" << ni->walking_index << "][" << nj->walking_index 
+                         << "] = " << tree_dist[ni->walking_index][nj->walking_index] << endl;
                 }
+                
                 cout << "forest_dist[" << di << "][" << dj << "] = " << forest_dist[di][dj] << endl;
             }
         }
@@ -275,18 +284,11 @@ public:
         reverse(keyroots1.begin(), keyroots1.end());
         reverse(keyroots2.begin(), keyroots2.end());
         
-        // print_keyroots(keyroots1, "\nKeyroots da Árvore 1:");
-        // print_keyroots(keyroots2, "\nKeyroots da Árvore 2:");
+        print_keyroots(keyroots1, "\nKeyroots da Árvore 1:");
+        print_keyroots(keyroots2, "\nKeyroots da Árvore 2:");
 
         // Preparar a matriz para a distância entre árvores
         tree_dist.resize(nodes1.size() + 1, vector<int>(nodes2.size() + 1, 0));
-
-        for (int i = 1; i <= nodes1.size(); ++i) {
-            tree_dist[i][0] = tree_dist[i-1][0] + remove_cost; // Custo de remoção
-        }
-        for (int j = 1; j <= nodes2.size(); ++j) {
-            tree_dist[0][j] = tree_dist[0][j-1] + add_cost; // Custo de adição
-        }
 
         // Para cada par de keyroots, calcular a distância entre as subárvores
         for (Node* n1 : keyroots1) {
@@ -311,7 +313,7 @@ public:
         print_matrix(tree_dist, nodes1, nodes2, "Distância entre Árvores");
 
         // Retornar a distância entre as árvores completas
-        return tree_dist[nodes1.back()->walking_index+1][nodes2.back()->walking_index+1];
+        return tree_dist[nodes1.back()->walking_index][nodes2.back()->walking_index];
     }
 };
 
