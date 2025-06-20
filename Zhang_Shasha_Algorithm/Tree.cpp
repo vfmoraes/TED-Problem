@@ -6,22 +6,22 @@
 
 using namespace std;
 
-// Função auxiliar para imprimir os nós da árvore
-void print_tree_nodes(const vector<Node*>& nodes, const string& title) {
+// Utility function to print tree nodes
+void printTreeNodes(const vector<Node*>& nodes, const string& title) {
     cout << title << endl;
     for (const Node* node : nodes) {
-        cout << "Nó: " << node->label 
+        cout << "Node: " << node->label 
              << ", walking_index: " << node->walking_index
              << ", li: " << node->li << endl;
     }
 }
 
-// Função auxiliar para imprimir keyroots
-void print_tree_keyroots(const vector<Node*>& keyroots, const string& title) {
+// Utility function to print keyroots
+void printTreeKeyroots(const vector<Node*>& keyroots, const string& title) {
     cout << title << endl;
     for (const Node* n : keyroots) {
         if (n)
-            cout << "Nó: " << n->label << ", walking_index: " << n->walking_index 
+            cout << "Node: " << n->label << ", walking_index: " << n->walking_index 
                  << ", li: " << n->li << endl;
     }
 }
@@ -68,7 +68,11 @@ vector<Node *> Tree::get_indices() {
    return indices;
 }
 
-
+/**
+* @brief Returns a node by its index with bounds checking.
+* @param index The index of the node to retrieve.
+* @return Pointer to the node, or nullptr if index is out of bounds.
+*/
 Node* Tree::get_node(int index) {
    if (index < 0 || index >= indices.size()) {
        cerr << "Index out of bounds: " << index << endl;
@@ -130,6 +134,6 @@ void Tree::find_keyroots(Node *current_node, int &last_li) {
        find_keyroots(child, last_li);
    }
    
-   // A inversão não deve ser feita aqui dentro da recursão
-   // Ela deve ser feita uma única vez após todas as chamadas recursivas
+   // Reversal should not be done here within recursion
+   // It should be done once after all recursive calls
 }

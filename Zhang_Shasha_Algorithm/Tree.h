@@ -16,9 +16,9 @@ public:
     void add_child(Node* childPointer);
 };
 
-// Funções auxiliares para impressão (após definição de Node)
-void print_tree_nodes(const vector<Node*>& nodes, const string& title);
-void print_tree_keyroots(const vector<Node*>& keyroots, const string& title);
+// Utility functions for printing (after Node definition)
+void printTreeNodes(const vector<Node*>& nodes, const string& title);
+void printTreeKeyroots(const vector<Node*>& keyroots, const string& title);
 
 class Tree {
 private:
@@ -33,7 +33,7 @@ public:
     vector<Node*> get_indices();
     Node* get_node(int index);
     void post_order(Node* current_node, int& counter);
-    void find_keyroots(Node*current_node, int &last_li);
+    void find_keyroots(Node* current_node, int& last_li);
 };
 
-#endif  //TREE_H
+#endif  // TREE_H

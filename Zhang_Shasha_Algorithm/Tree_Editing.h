@@ -1,5 +1,5 @@
-#ifndef TREE_EDITING
-#define TREE_EDITING
+#ifndef TREE_EDITING_H
+#define TREE_EDITING_H
 
 #include <iostream>
 #include <vector>
@@ -22,9 +22,13 @@ public:
 
     Tree_Editing(Tree* t1, Tree* t2);
 
-    int tree_dist_calc(Tree T1, Tree T2);
-    int comput_tree_dist(int index1, int index2);
+    // Main tree edit distance calculation methods
+    int treeEditDistance(Tree T1, Tree T2);
+    int tree_dist_calc(Tree T1, Tree T2);  // Legacy name for compatibility
+    int computeTreeDistance(int index1, int index2);
+    int comput_tree_dist(int index1, int index2);  // Legacy name for compatibility
 
+    // Node access methods with bounds checking
     Node* get_node1(int index) {
         if (index < 0 || index >= nodes1.size()) {
             cerr << "Index out of bounds for nodes1: " << index << endl;
@@ -40,14 +44,12 @@ public:
         return nodes2[index];
     }
 
-    void initialize_matrix(std::vector<std::vector<int>>& matrix, int T1_size, int T2_size);
+    // Utility method
     int interval_calc(int li, int i);
-    void build_tree_matrix(int T1_size, int T2_size);
-    void build_forest_matrix(int T1_size, int T2_size);
 };
 
-// Funções auxiliares para impressão (após definição de Node)
-void print_tree_editing_matrix(const vector<vector<int>>& matrix, const vector<Node*>& nodes1, const vector<Node*>& nodes2, const string& title);
-void print_tree_editing_keyroots(const vector<Node*>& keyroots, const string& title);
+// Utility functions for printing matrices (after Node definition)
+void printTreeEditingMatrix(const vector<vector<int>>& matrix, const vector<Node*>& nodes1, const vector<Node*>& nodes2, const string& title);
 
-#endif //TREE_EDITING
+#endif // TREE_EDITING_H
+void print_tree_editing_keyroots(const vector<Node*>& keyroots, const string& title);
