@@ -146,7 +146,9 @@ Tree createRandomTree(int numNodes, int seed, bool debug) {
 
     if (debug) {
         printTreeNodes(tree, "Random Tree (post-order):");
-    }    // Find keyroots of tree 2
+    }
+    
+    // Find keyroots of tree
     int last_li2 = -1;
     tree.find_keyroots(tree.get_root(), last_li2);
     vector<Node*> keyroots2 = tree.get_LR_keyroots();
@@ -154,6 +156,118 @@ Tree createRandomTree(int numNodes, int seed, bool debug) {
     if (debug) {
         printKeyroots(keyroots2, "\nRandom Tree Keyroots (after reversal):");
     }
+    return tree;
+}
+
+// Create worst-case tree structure (linear chain - maximizes keyroots and computation)
+Tree createWorstCaseTree(int numNodes, bool leftChain = true, bool debug = false) {
+    if (numNodes <= 0) {
+        cerr << "Number of nodes must be greater than zero." << endl;
+        return Tree(nullptr);
+    }
+    
+    char nodeChar = 'a';
+    Node* root = createNode(nodeChar);
+    nodeChar++;
+    
+    Node* current = root;
+    
+    // Create a linear chain structure (worst case for Zhang-Shasha)
+    for (int i = 1; i < numNodes; ++i) {
+        Node* newNode = createNode(nodeChar);
+        nodeChar = nodeChar < 'z' ? nodeChar + 1 : 'a';
+        
+        if (leftChain) {
+            // Create left-heavy chain (each node has only left child)
+            current->add_child(newNode);
+        } else {
+            // Create right-heavy chain by adding as rightmost child
+            current->add_child(newNode);
+        }
+        current = newNode;
+    }
+    
+    Tree tree(root);
+    
+    // Perform post-order traversal
+    int counter = 0;
+    tree.post_order(tree.get_root(), counter);
+    
+    if (debug) {
+        printTreeNodes(tree, leftChain ? "Worst Case Tree - Left Chain (post-order):" : "Worst Case Tree - Right Chain (post-order):");
+    }
+    
+    // Find keyroots
+    int last_li = -1;
+    tree.find_keyroots(tree.get_root(), last_li);
+    vector<Node*> keyroots = tree.get_LR_keyroots();
+    reverse(keyroots.begin(), keyroots.end());
+    
+    if (debug) {
+        printKeyroots(keyroots, leftChain ? "\nWorst Case Tree Keyroots - Left Chain:" : "\nWorst Case Tree Keyroots - Right Chain:");
+    }
+    
+    return tree;
+}
+
+// Create balanced tree (best case scenario)
+Tree createBestCaseTree(int numNodes, bool debug = false) {
+    if (numNodes <= 0) {
+        cerr << "Number of nodes must be greater than zero." << endl;
+        return Tree(nullptr);
+    }
+    
+    char nodeChar = 'a';
+    vector<Node*> currentLevel;
+    Node* root = createNode(nodeChar);
+    nodeChar++;
+    currentLevel.push_back(root);
+    
+    int nodesCreated = 1;
+    
+    // Create a root node with n-1 children
+    while (nodesCreated < numNodes) {
+        vector<Node*> nextLevel;
+        for (Node* parent : currentLevel) {
+            // Create two children for each parent if possible
+            if (nodesCreated < numNodes) {
+                Node* leftChild = createNode(nodeChar);
+                nodeChar = nodeChar < 'z' ? nodeChar + 1 : 'a';
+                parent->add_child(leftChild);
+                nextLevel.push_back(leftChild);
+                nodesCreated++;
+            }
+            if (nodesCreated < numNodes) {
+                Node* rightChild = createNode(nodeChar);
+                nodeChar = nodeChar < 'z' ? nodeChar + 1 : 'a';
+                parent->add_child(rightChild);
+                nextLevel.push_back(rightChild);
+                nodesCreated++;
+            }
+        }
+        currentLevel = nextLevel;
+    }
+    
+    Tree tree(root);
+    
+    // Perform post-order traversal
+    int counter = 0;
+    tree.post_order(tree.get_root(), counter);
+    
+    if (debug) {
+        printTreeNodes(tree, "Best Case Tree - Balanced (post-order):");
+    }
+    
+    // Find keyroots
+    int last_li = -1;
+    tree.find_keyroots(tree.get_root(), last_li);
+    vector<Node*> keyroots = tree.get_LR_keyroots();
+    reverse(keyroots.begin(), keyroots.end());
+    
+    if (debug) {
+        printKeyroots(keyroots, "\nBest Case Tree Keyroots - Balanced:");
+    }
+    
     return tree;
 }
 
@@ -321,31 +435,100 @@ struct PerformanceResult {
     int tree2RootKeys;
     double executionTimeMs;
     int distance;
+    double memoryKB; // Adicionado para armazenar o uso médio de memória
 };
+
+/**
+ * @brief Run worst-case performance test
+ */
+PerformanceResult runBestCaseTest(int size, bool debug = false) {
+    Tree tree1 = createWorstCaseTree(size, true, debug);   // Left chain
+    Tree tree2 = createWorstCaseTree(size, false, debug);  // Right chain
+
+    // Cálculo estimado de memória (duas tabelas |T1| x |T2| de int)
+    size_t mem_bytes = 2ULL * tree1.get_indices().size() * tree2.get_indices().size() * sizeof(int);
+    double mem_kb = mem_bytes / (1024.0 * 1024.0);
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    Tree_Editing ted(&tree1, &tree2);
+    int distance = ted.treeEditDistance(tree1, tree2);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    PerformanceResult result;
+    result.tree1Size = size;
+    result.tree1RootKeys = tree1.get_LR_keyroots().size();
+    result.tree2Size = size;
+    result.tree2RootKeys = tree2.get_LR_keyroots().size();
+    result.executionTimeMs = duration.count() / 1000.0;
+    result.distance = distance;
+    result.memoryKB = mem_kb; // Salva o valor estimado de memória
+
+    return result;
+}
+
+/**
+ * @brief Run best-case performance test
+ */
+PerformanceResult runWorstCaseTest(int size, bool debug = false) {
+    Tree tree1 = createBestCaseTree(size, debug);
+    Tree tree2 = createBestCaseTree(size, debug);
+
+    // Cálculo estimado de memória (duas tabelas |T1| x |T2| de int)
+    size_t mem_bytes = 2ULL * tree1.get_indices().size() * tree2.get_indices().size() * sizeof(int);
+    double mem_kb = mem_bytes / (1024.0 * 1024.0);
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    Tree_Editing ted(&tree1, &tree2);
+    int distance = ted.treeEditDistance(tree1, tree2);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    PerformanceResult result;
+    result.tree1Size = size;
+    result.tree1RootKeys = tree1.get_LR_keyroots().size();
+    result.tree2Size = size;
+    result.tree2RootKeys = tree2.get_LR_keyroots().size();
+    result.executionTimeMs = duration.count() / 1000.0;
+    result.distance = distance;
+    result.memoryKB = mem_kb; // Salva o valor estimado de memória
+
+    return result;
+}
 
 /**
  * @brief Run performance test for a pair of trees
  */
 PerformanceResult runPerformanceTest(int size1, int size2, int seed1, int seed2, bool debug = false) {
-    // Create random trees
     Tree tree1 = createRandomTree(size1, seed1, debug);
     Tree tree2 = createRandomTree(size2, seed2, debug);
 
+    // Cálculo estimado de memória (duas tabelas |T1| x |T2| de int)
+    size_t mem_bytes = 2ULL * tree1.get_indices().size() * tree2.get_indices().size() * sizeof(int);
+    mem_bytes += tree1.get_indices().size() * sizeof(Node*) + tree2.get_indices().size() * sizeof(Node*); // Adiciona o tamanho dos vetores de nós
+    double mem_kb = mem_bytes / (1024.0);
+
     auto start = std::chrono::high_resolution_clock::now();
-    
+
     Tree_Editing ted(&tree1, &tree2);
     int distance = ted.treeEditDistance(tree1, tree2);
-    
+
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    
+
     PerformanceResult result;
     result.tree1Size = size1;
     result.tree1RootKeys = tree1.get_LR_keyroots().size();
     result.tree2Size = size2;
-    result.tree2RootKeys = tree2.get_LR_keyroots().size();    result.executionTimeMs = duration.count() / 1000.0; // Convert to milliseconds
+    result.tree2RootKeys = tree2.get_LR_keyroots().size();
+    result.executionTimeMs = duration.count() / 1000.0;
     result.distance = distance;
-    
+    result.memoryKB = mem_kb; // Salva o valor estimado de memória
+
     return result;
 }
 
@@ -354,15 +537,15 @@ PerformanceResult runPerformanceTest(int size1, int size2, int seed1, int seed2,
  */
 void saveResultsToCSV(const vector<PerformanceResult>& results, const string& filename) {
     ofstream file(filename);
-    
+
     if (!file.is_open()) {
         cout << "Error: Could not create file " << filename << endl;
         return;
     }
-    
+
     // CSV header
-    file << "Tree1Size,Tree1RootKeys,Tree2Size,Tree2RootKeys,ExecutionTimeMs,Distance\n";
-    
+    file << "Tree1Size,Tree1RootKeys,Tree2Size,Tree2RootKeys,ExecutionTimeMs,Distance,MemoryKB\n";
+
     // Data
     for (const auto& result : results) {
         file << result.tree1Size << ","
@@ -370,9 +553,10 @@ void saveResultsToCSV(const vector<PerformanceResult>& results, const string& fi
                 << result.tree2Size << ","
                 << result.tree2RootKeys << ","
                 << fixed << setprecision(4) << result.executionTimeMs << ","
-                << result.distance << "\n";
+                << result.distance << ","
+                << fixed << setprecision(2) << result.memoryKB << "\n";
     }
-    
+
     file.close();
     cout << "Results saved to: " << filename << endl;
 }
@@ -380,7 +564,89 @@ void saveResultsToCSV(const vector<PerformanceResult>& results, const string& fi
 /**
  * @brief Main function with test menu
  */
-int main() {
+int best_worst_case_tests() {
+    cout << "========================================" << endl;
+    cout << "  PERFORMANCE ANALYSIS - ZHANG-SHASHA ALGORITHM" << endl;
+    cout << "       Tree Edit Distance (TED)" << endl;
+    cout << "========================================" << endl;
+    cout << endl;
+    
+    vector<PerformanceResult> results;
+    vector<int> sizes = {10000}; // Adjusted sizes for worst-case analysis
+    
+    cout << "Running comprehensive performance tests..." << endl;
+    cout << "Test scenarios: Random, Best Case (Balanced), Worst Case (Linear)" << endl;
+    cout << "Sizes tested: 10000 nodes" << endl;
+    cout << string(70, '=') << endl;
+    
+    for (int size : sizes) {
+        cout << "\n" << string(70, '-') << endl;
+        cout << "TESTING TREES OF SIZE " << size << endl;
+        cout << string(70, '-') << endl;
+
+        cout << "\n1. BEST CASE TEST (Balanced Trees):" << endl;
+        cout << "Testing balanced trees of size " << size << "...";
+        cout.flush();
+        auto testStart = std::chrono::high_resolution_clock::now();
+        
+        PerformanceResult bestResult = runBestCaseTest(size);
+        results.push_back(bestResult);
+        
+        auto testEnd = std::chrono::high_resolution_clock::now();
+        auto testDuration = std::chrono::duration_cast<std::chrono::milliseconds>(testEnd - testStart);
+        
+        cout << " Completed in " << testDuration.count() << " ms" << endl;
+        cout << "  Tree 1 size: " << bestResult.tree1Size 
+             << " (Root Keys: " << bestResult.tree1RootKeys << ")" << endl;
+        cout << "  Tree 2 size: " << bestResult.tree2Size 
+             << " (Root Keys: " << bestResult.tree2RootKeys << ")" << endl;
+        cout << "  Algorithm time: " << fixed << setprecision(2) 
+             << bestResult.executionTimeMs << " ms" << endl;
+        cout << "  Edit distance: " << bestResult.distance << endl;
+        cout << "  Estimated memory usage: " << fixed << setprecision(2) 
+             << bestResult.memoryKB << " KB" << endl;
+        
+        // 2. Worst Case Test
+        cout << "\n2. WORST CASE TEST (Linear Chains):" << endl;
+        cout << "Testing linear chain trees of size " << size << "...";
+        cout.flush();
+        testStart = std::chrono::high_resolution_clock::now();
+        
+        PerformanceResult worstResult = runWorstCaseTest(size);
+        results.push_back(worstResult);
+        
+        testEnd = std::chrono::high_resolution_clock::now();
+        testDuration = std::chrono::duration_cast<std::chrono::milliseconds>(testEnd - testStart);
+        
+        cout << " Completed in " << testDuration.count() << " ms" << endl;
+        cout << "  Tree 1 size: " << worstResult.tree1Size 
+             << " (Root Keys: " << worstResult.tree1RootKeys << ")" << endl;
+        cout << "  Tree 2 size: " << worstResult.tree2Size 
+             << " (Root Keys: " << worstResult.tree2RootKeys << ")" << endl;
+        cout << "  Algorithm time: " << fixed << setprecision(2) 
+             << worstResult.executionTimeMs << " ms" << endl;
+        cout << "  Edit distance: " << worstResult.distance << endl;
+        
+        // Performance comparison
+        cout << "\n3. PERFORMANCE COMPARISON:" << endl;
+        cout << "  Worst vs Best:   " << fixed << setprecision(2) 
+             << (worstResult.executionTimeMs / bestResult.executionTimeMs) << "x slower" << endl;
+    }
+    
+    cout << "\n" << string(70, '=') << endl;
+    
+    // Save results to CSV file
+    saveResultsToCSV(results, "BW_complexity_results.csv");
+    
+    cout << "\n========================================" << endl;
+    cout << "      COMPREHENSIVE TESTS COMPLETED" << endl;
+    cout << "========================================" << endl;
+    cout << endl;
+    
+    return 0;
+}
+
+void random_tests(){
     cout << "========================================" << endl;
     cout << "  PERFORMANCE ANALYSIS - ZHANG-SHASHA ALGORITHM" << endl;
     cout << "       Tree Edit Distance (TED)" << endl;
@@ -417,6 +683,8 @@ int main() {
         cout << "  Algorithm time: " << fixed << setprecision(2) 
              << result.executionTimeMs << " ms" << endl;
         cout << "  Edit distance (TED): " << result.distance << endl;
+        cout << "  Estimated memory usage: " << fixed << setprecision(2) 
+             << result.memoryKB << " KB" << endl;
         cout << endl;
         cout << endl;
     }
@@ -424,15 +692,25 @@ int main() {
     cout << string(60, '-') << endl;
     
     // Save results to CSV file
-    saveResultsToCSV(results, "complexity_results.csv");
+    saveResultsToCSV(results, "RAND_complexity_results.csv");
     
     cout << "========================================" << endl;
     cout << "           TESTS COMPLETED" << endl;
     cout << "========================================" << endl;
     cout << endl;
+}
+
+/**
+ * @brief Main function with test menu
+ */
+int main() {
+    
+    random_tests();
+    best_worst_case_tests();
     
     return 0;
 }
+
 
 // Deprecated manual test code - kept for tests
 // int main() {
